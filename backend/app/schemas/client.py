@@ -1,12 +1,13 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict
 
 
 class ClientBase(BaseModel):
     name: str
     phone: str
-    email: EmailStr | None = None
+    # Use plain `str` to avoid requiring `email-validator` at runtime.
+    email: str | None = None
     gender: str | None = None
     birth_date: date | None = None
 
