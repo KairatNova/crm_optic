@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +13,23 @@ class Settings(BaseSettings):
     )
 
     database_url: str = Field(alias="DATABASE_URL")
+
+    telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
+    jwt_secret: str = Field(default="change-me-in-production", alias="JWT_SECRET")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    jwt_expire_minutes: int = Field(default=43200, alias="JWT_EXPIRE_MINUTES")
+    telegram_bootstrap_owner_telegram_id: int | None = Field(
+        default=None,
+        alias="TELEGRAM_BOOTSTRAP_OWNER_TELEGRAM_ID",
+    )
+    cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
+
+    @field_validator("telegram_bootstrap_owner_telegram_id", mode="before")
+    @classmethod
+    def empty_bootstrap_id(cls, v: object) -> object:
+        if v is None or v == "":
+            return None
+        return v
 
 
 @lru_cache
