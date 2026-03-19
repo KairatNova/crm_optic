@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(default="change-me-in-production", alias="JWT_SECRET")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     jwt_expire_minutes: int = Field(default=43200, alias="JWT_EXPIRE_MINUTES")
+    verification_code_ttl_minutes: int = Field(default=10, alias="VERIFICATION_CODE_TTL_MINUTES")
+    start_token_ttl_minutes: int = Field(default=10, alias="START_TOKEN_TTL_MINUTES")
+    verification_max_attempts: int = Field(default=5, alias="VERIFICATION_MAX_ATTEMPTS")
+    telegram_bot_username: str = Field(default="", alias="TELEGRAM_BOT_USERNAME")
+    telegram_bot_webhook_secret: str = Field(default="", alias="TELEGRAM_BOT_WEBHOOK_SECRET")
     telegram_bootstrap_owner_telegram_id: int | None = Field(
         default=None,
         alias="TELEGRAM_BOOTSTRAP_OWNER_TELEGRAM_ID",

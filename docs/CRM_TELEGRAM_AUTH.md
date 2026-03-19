@@ -1,81 +1,73 @@
-# Вход в CRM через Telegram
+# CRM Auth: owner + admins + Telegram code
 
-Два варианта аутентификации для админов CRM (клиенты лендинга не авторизуются).
+Открытой регистрации нет. Вход только для пользователей, которых создаёт `owner`.
 
----
+## Реализованный поток
 
-## Вариант 1: Telegram Login Widget (реализовано в backend)
+### 1) Owner создаёт админа
 
-Официальная кнопка «Войти через Telegram» на странице `/crm/login`.
+- `POST /owner/admins` (только `owner`)
+- owner передаёт `username` и/или `phone`, `password`, опционально `full_name`, `email`, `telegram_username`
+- создаётся `role=admin`, `is_verified=false`
 
-### Как работает
+### 2) Шаг входа 1 — `login-request`
 
-1. Владелец в CRM добавляет пользователя с **числовым Telegram ID** (`telegram_id`). Узнать ID: [@userinfobot](https://t.me/userinfobot) или аналог.
-2. На фронте встраивается виджет Telegram ([документация](https://core.telegram.org/widgets/login)):
-  - `data-bot-token` — токен бота (на фронте обычно не кладут токен; достаточно `data-telegram-login` и имени бота).
-  - `data-auth-url` — URL вашего API, например `https://api.example.com/auth/telegram/callback`.
-3. После подтверждения Telegram перенаправляет браузер на `auth-url` **GET** с параметрами: `id`, `first_name`, `username`, `auth_date`, `hash`, …
-4. Backend проверяет подпись `hash` по алгоритму Telegram (HMAC-SHA256), проверяет свежесть `auth_date`.
-5. Если `id` есть в таблице `users` как `telegram_id` и пользователь активен — выдаётся **JWT**. Иначе — 403.
+- `POST /auth/login-request`
+- вход: `login` (`username` или `phone`) + `password`
+- backend:
+  - нормализует логин (`username` lower, `phone` в `+996...`)
+  - проверяет пароль
+  - создаёт одноразовый `start_token` с TTL
+  - возвращает `telegram_link`: `https://t.me/<bot>?start=<token>`
 
-### Переменные окружения (backend)
+### 3) Telegram bot `/start`
 
-- `TELEGRAM_BOT_TOKEN` — токен бота (для проверки подписи callback).
-- `JWT_SECRET` — секрет подписи JWT (длинная случайная строка).
-- `JWT_EXPIRE_MINUTES` — срок жизни токена (по умолчанию 43200 ≈ 30 дней).
-- `TELEGRAM_BOOTSTRAP_OWNER_TELEGRAM_ID` (опционально) — при **первом** входе с этого Telegram ID, если в БД ещё нет ни одного пользователя с ролью `owner`, создаётся владелец. Дальше владелец добавляет админов через API.
+- бот получает `start_token` и вызывает:
+  - `POST /auth/telegram/start`
+  - body: `start_token`, `chat_id`, `telegram_username`
+  - header (опционально): `X-Bot-Secret`
+- backend:
+  - валидирует токен и срок
+  - привязывает `telegram_chat_id` к пользователю
+  - генерирует 6-значный код входа (TTL 5-10 минут)
+  - возвращает текст для отправки пользователю: `"Your login code: 123456..."`
 
-### API
+### 4) Шаг входа 2 — `login-verify`
 
-- `GET /auth/telegram/callback` — приём редиректа от виджета; ответ JSON: `access_token`, `token_type`, `user`.
-- Остальные CRM-ручки требуют заголовок: `Authorization: Bearer <access_token>`.
+- `POST /auth/login-verify`
+- вход: `login`, `verification_code`
+- backend:
+  - проверяет код (в БД хранится только хэш кода)
+  - ограничивает число попыток
+  - при успехе: `is_verified=true`, выдаёт JWT
 
-### Плюсы / минусы
+### 5) Проверка текущего пользователя
 
+- `GET /auth/me` — возвращает текущего пользователя по Bearer JWT
 
-| Плюсы                                  | Минусы                                                 |
-| -------------------------------------- | ------------------------------------------------------ |
-| Быстрый вход в один клик               | Зависимость от скрипта виджета Telegram                |
-| Данные проверяются подписью на сервере | На части мобильных браузеров попап может блокироваться |
+## Owner API
 
+- `POST /owner/admins` — создать админа
+- `GET /owner/admins` — список админов
+- `PATCH /owner/admins/{id}` — активировать/деактивировать, сбросить пароль
 
----
+## ENV переменные
 
-## Вариант 2: Номер телефона + OTP в Telegram (свой бот) — **не реализовано, запасной план**
+- `JWT_SECRET`
+- `JWT_EXPIRE_MINUTES`
+- `VERIFICATION_CODE_TTL_MINUTES`
+- `START_TOKEN_TTL_MINUTES`
+- `VERIFICATION_MAX_ATTEMPTS`
+- `TELEGRAM_BOT_USERNAME`
+- `TELEGRAM_BOT_WEBHOOK_SECRET` (если хотите защищать endpoint бота)
+- `CORS_ORIGINS`
 
-### Идея
+## Безопасность (внедрено)
 
-1. Админ вводит **номер телефона** на странице входа CRM.
-2. Backend проверяет, что номер есть у пользователя в БД и привязан `telegram_user_id` (после `/start` у бота).
-3. Генерируется одноразовый код, бот отправляет его в Telegram.
-4. Админ вводит код → выдаётся JWT.
+- Пароли: `bcrypt`
+- Коды: хранятся как SHA-256 хэш
+- `start_token`: одноразовый + TTL
+- Ограничение попыток ввода кода
+- JWT для CRM-эндпоинтов
 
-### Что понадобится
-
-- Отдельный сервис/скрипт бота (aiogram и т.д.).
-- Таблица одноразовых кодов (TTL, лимиты по частоте).
-- Один раз пользователь должен нажать **/start** у бота, иначе бот не сможет писать первым.
-
-### Плюсы / минусы
-
-
-| Плюсы                                 | Минусы                                         |
-| ------------------------------------- | ---------------------------------------------- |
-| Полный контроль над UI формы          | Нужен бот и инфраструктура OTP                 |
-| Можно не слать код незнакомым номерам | SMS не нужен, но без /start у бота не обойтись |
-
-
----
-
-## Рекомендация
-
-- **Сейчас:** Вариант 1 (виджет) + JWT + добавление пользователей владельцем по `telegram_id`.
-- **Позже:** при необходимости добавить Вариант 2 параллельно (двухфакторно или как альтернативный вход).
-
----
-
-## Дополнительно в API
-
-- **Лендинг (без входа):** `POST /public/booking` — создаёт клиента и запись на приём.
-- **CRM (с JWT):** `GET/POST /clients`, `GET/PATCH /appointments`, визиты, vision-tests, `POST /users` (только owner).
 

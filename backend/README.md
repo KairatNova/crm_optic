@@ -23,12 +23,12 @@ python -m venv .venv
 Проверка:
 - `GET /health`
 - Лендинг (без входа): `POST /public/booking`
-- Вход в CRM (Telegram): `GET /auth/telegram/callback` — см. `docs/CRM_TELEGRAM_AUTH.md`
+- Вход в CRM: `POST /auth/login-request` -> Telegram `/start` -> `POST /auth/login-verify`
 
-## CRM и Telegram
+## CRM и Telegram (owner/admin flow)
 
-1. В `.env`: `TELEGRAM_BOT_TOKEN`, `JWT_SECRET`, опционально `TELEGRAM_BOOTSTRAP_OWNER_TELEGRAM_ID` (ваш числовой Telegram ID для первого владельца).
-2. Первый вход владельца через виджет → создаётся пользователь с ролью `owner`.
-3. Дальше owner добавляет админов: `POST /users` с заголовком `Authorization: Bearer <token>` и телом `{ "telegram_id": ..., "role": "admin" }`.
+1. В `.env`: `TELEGRAM_BOT_USERNAME`, `JWT_SECRET`, TTL/attempts настройки (см. `.env.example`).
+2. Owner создаёт админов: `POST /owner/admins`.
+3. Админ входит: `POST /auth/login-request` -> открыть `telegram_link` -> бот вызывает `POST /auth/telegram/start` -> `POST /auth/login-verify`.
 
 Подробно: **`docs/CRM_TELEGRAM_AUTH.md`**.

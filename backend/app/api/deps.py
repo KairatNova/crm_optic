@@ -62,3 +62,4 @@ def require_crm_roles(*roles: str) -> Callable[..., User]:
         return user
 
     return _dep
+

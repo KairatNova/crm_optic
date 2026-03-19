@@ -1,107 +1,106 @@
 # CRM Optic — текущий статус проекта
 
-Дата: 2026‑03‑18
+Дата: 2026-03-18
 
 ## Что сделано
 
 ### Backend (FastAPI)
 
-- **Async БД слой**: `AsyncEngine` + `AsyncSession` (`backend/app/core/database.py`).
-- **Конфиг из env**: `DATABASE_URL`, JWT/Telegram, CORS (`backend/app/core/config.py`).
-- **Alembic**: настроены миграции (`backend/migrations/*`).
-- **Таблицы (MVP)**:
-  - `users`, `clients`, `appointments`, `visits`, `vision_tests`
-  - Доп. поля:
-    - `users`: `role`, `full_name`, `email`, `telegram_id` (unique), `hashed_password` nullable
-    - `clients`: `gender`
-    - `vision_tests`: `va_r`, `va_l`, `lens_type`, `frame_model` (+ уже были `axis`)
-- **API (CRM, защищено JWT)**:
+- Async DB (`AsyncEngine` + `AsyncSession`), Alembic, базовые модели и MVP API.
+- CRM API:
   - `GET/POST /clients`, `GET /clients/{id}`
   - `GET/POST /clients/{id}/visits`
   - `GET/POST /clients/{id}/vision-tests`
   - `GET /appointments`, `PATCH /appointments/{id}`
-  - `POST /users` (только owner) — добавление админов по `telegram_id`
-  - `GET /users/me`
-- **Публичная запись с лендинга (без входа)**:
-  - `POST /public/booking` — создаёт клиента + запись (status=`new`)
-- **Auth в CRM (Telegram Login Widget)**:
-  - `GET /auth/telegram/callback` — проверка подписи Telegram → выдача JWT
-  - Описание флоу: `docs/CRM_TELEGRAM_AUTH.md`
-- **CORS**:
-  - Добавлен `CORSMiddleware` (настраивается через `CORS_ORIGINS`, по умолчанию `http://localhost:3000`)
+- Публичный endpoint лендинга:
+  - `POST /public/booking` (создаёт клиента + запись).
+- CORS добавлен через `CORSMiddleware` (`CORS_ORIGINS`).
+
+#### Новый auth flow (owner + admins + Telegram code)
+
+- Удалены старые варианты (Telegram Login Widget callback и старый `/users` flow).
+- Реализовано:
+  - `POST /auth/login-request`
+  - `POST /auth/telegram/start` (для Telegram-бота)
+  - `POST /auth/login-verify`
+  - `GET /auth/me`
+  - `POST /owner/admins` (owner only)
+  - `GET /owner/admins` (owner only)
+  - `PATCH /owner/admins/{id}` (owner only)
+- Безопасность:
+  - bcrypt для паролей
+  - hash кода входа
+  - start-token одноразовый + TTL
+  - лимит попыток кода
+- Новые сущности/поля:
+  - `users`: `phone`, `telegram_username`, `telegram_chat_id`, `is_verified`, `created_at`, `updated_at`
+  - `login_verification_codes`
+  - `telegram_pending_links`
+- Миграция:
+  - `0005_owner_admin_login_flow.py`
 
 ### Frontend (Next.js + Tailwind)
 
-- **Лендинг** (mobile-first, стиль как в референсе) на маршрутах:
-  - `/ru`, `/ky`, `/en`
-- **Мультиязычность**:
-  - словари: `frontend/src/i18n/{ru,ky,en}.ts`
-  - редирект `/` → `/ru` + сохранение locale в cookie: `frontend/src/middleware.ts`
-  - современный переключатель языка: `frontend/src/components/LanguageSwitcher.tsx`
-  - мобильное меню: `frontend/src/components/MobileMenu.tsx`
-- **Форма записи подключена к backend**:
-  - Отправка в `POST /public/booking`
-  - UX: loading + success/error
-  - Телефон Кыргызстана: нормализация/валидация → отправляется как `+996XXXXXXXXX`
-  - Выбор времени: **слоты-кнопки** (09:00–18:00, шаг 30 минут)
-  - Компонент: `frontend/src/components/BookingForm.tsx`
-- **API base URL**:
-  - `NEXT_PUBLIC_API_BASE_URL` (по умолчанию `http://localhost:8000`)
+- Лендинг mobile-first на `/ru`, `/ky`, `/en`.
+- i18n: словари `ru/ky/en`, редирект `/ -> /ru`, красивый переключатель языка.
+- Мобильное меню, фиксированная CTA-кнопка.
+- Форма записи подключена к backend:
+  - отправка в `POST /public/booking`
+  - валидации, loading/success/error
+  - номер Кыргызстана (`+996...`) нормализуется на фронте
+  - выбор времени через слоты-кнопки (шаг 30 минут)
+- CRM UI добавлен:
+  - `/[locale]/crm/login`
+  - защищённые страницы `/[locale]/crm/(protected)` (dashboard/clients/users)
 
-## На каком этапе сейчас проект
+## Текущий этап по MVP
 
-По `MVP_PLAN.md`:
+- Checkpoint A: готово в коде, нужен рабочий Postgres + миграции в локальном окружении.
+- Checkpoint B: готово (модели/миграции).
+- Checkpoint C: готово (API MVP + рекомендованные endpoints).
+- Checkpoint D: в разработке (базовый CRM UI уже есть, нужна финальная полировка и привязка к новому auth flow на фронте).
+- Checkpoint E: почти готово (лендинг + рабочая форма записи).
 
-- **Checkpoint A (каркас + запуск)**: в коде готово, зависит от локального Postgres и применения миграций.
-- **Checkpoint B (модели + миграции)**: **готово** (миграции `0001`–`0004`).
-- **Checkpoint C (API MVP)**: **готово** (clients/appointments + visits + vision-tests) + добавлен публичный booking.
-- **Checkpoint E (лендинг MVP)**: **почти готово** — UI + отправка записи уже есть.
-- **Checkpoint D (CRM UI)**: **ещё не сделано** (только backend и Telegram auth готовы).
+## Что осталось сделать
 
-Итого: **MVP сейчас упёрся в CRM UI и в стабилизацию запуска БД/миграций на вашей машине.**
+### 1) Довести CRM auth на фронте под новый flow
 
-## Что нужно сделать дальше (следующие шаги)
+- Логин-экран в 2 шага:
+  1. `login-request` (login + password, получить telegram_link)
+  2. `login-verify` (код из Telegram)
+- Хранение JWT и обновление `crm-auth` клиента.
+- Guard для protected CRM-страниц через `GET /auth/me`.
 
-### 1) CRM UI (Next.js)
+### 2) Интеграция Telegram-бота
 
-- Страница `/crm/login` с **Telegram Login Widget** (кнопка).
-- Хранение JWT (для MVP можно localStorage, лучше позже cookie).
-- Защита роутов `/crm/*` (если нет токена → редирект на login).
-- `/crm`:
-  - список записей (таблица, фильтр по дате/статусу)
-  - кнопка смены статуса `new/done` (через `PATCH /appointments/{id}`)
-- `/crm/clients/[id]`:
-  - профиль клиента
-  - вкладки: визиты и vision tests (списки + формы добавления)
-- Для owner: `/crm/users` — добавление админов по `telegram_id`.
+- Реализовать обработчик `/start <token>` в боте.
+- Вызов backend: `POST /auth/telegram/start` (+ `X-Bot-Secret`).
+- Отправка пользователю текста с кодом входа.
 
-### 2) Улучшения backend под прод
+### 3) Запуск и стабилизация окружения
 
-- Валидация `starts_at` по рабочим часам (и/или шаг 30 мин) + базовая защита от спама (rate limit).
-- Добавить поиск/фильтры (по телефону/имени) для CRM.
-
-### 3) Инфраструктура/запуск
-
-- Убедиться, что **локальный Postgres** запущен и доступен, затем:
+- Убедиться, что локальный Postgres доступен.
+- Выполнить:
   - `cd backend`
   - `.venv\Scripts\alembic upgrade head`
-- Привести `.env` (не `.env.example`) под вашу локальную базу и токены.
+- Проверить `.env` (JWT, Telegram bot username/secret, CORS, DB URL).
 
-## Команды запуска (локально)
+## Команды запуска
 
 ### Backend
 
-Из `backend/`:
-
-- миграции:
-  - `.venv\Scripts\alembic upgrade head`
-- запуск:
-  - `.venv\Scripts\uvicorn app.main:app --reload --port 8000`
+```bash
+cd backend
+.venv\Scripts\alembic upgrade head
+.venv\Scripts\uvicorn app.main:app --reload --port 8000
+```
 
 ### Frontend
 
-Из `frontend/`:
+```bash
+cd frontend
+npm run dev
+```
 
-- `npm run dev`
-- открыть `http://localhost:3000/ru`
+Открыть: `http://localhost:3000/ru`
 
