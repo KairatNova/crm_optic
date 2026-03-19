@@ -8,7 +8,7 @@ export function MobileMenu({
   labels,
 }: {
   locale: Locale;
-  labels: { menu: string; about: string; services: string; shop: string; booking: string };
+  labels: { menu: string; about: string; services: string; shop: string; booking: string; crm: string };
 }) {
   const [open, setOpen] = useState(false);
 
@@ -54,6 +54,13 @@ export function MobileMenu({
                   {x.label}
                 </a>
               ))}
+              <a
+                href={`/${locale}/crm/login`}
+                onClick={() => setOpen(false)}
+                className="rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                {labels.crm}
+              </a>
             </div>
           </div>
         </div>

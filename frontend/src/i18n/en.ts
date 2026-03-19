@@ -6,8 +6,9 @@ export const en = {
     services: "Services",
     shop: "Store",
     booking: "Book",
+    crm: "Login",
   },
-  phone: "+7 (999) 123‑45‑67",
+  phone: "+996 000 123 456",
   hero: {
     title1: "Perfect vision.",
     title2: "Flawless style.",

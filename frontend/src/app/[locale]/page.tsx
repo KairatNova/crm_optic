@@ -38,6 +38,9 @@ export default async function Home({
             <a className="hover:text-zinc-950" href={`/${locale}/#shop`}>
               {t.nav.shop}
             </a>
+            <a className="font-semibold text-teal-700 hover:text-teal-800" href={`/${locale}/crm/login`}>
+              {t.nav.crm}
+            </a>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -62,6 +65,7 @@ export default async function Home({
                 services: t.nav.services,
                 shop: t.nav.shop,
                 booking: t.nav.booking,
+                crm: t.nav.crm,
               }}
             />
           </div>
