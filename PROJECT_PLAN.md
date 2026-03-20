@@ -340,36 +340,35 @@ crm_optic/
 Отмечайте прогресс прямо здесь.
 
 ### Checkpoint A — Проект поднят (backend+db)
-- [ ] docker-compose поднимает Postgres
-- [ ] backend стартует (health endpoint)
-- [ ] alembic миграции применяются
+- [ ] docker-compose поднимает Postgres *(локально у разработчика)*
+- [x] backend стартует (health endpoint)
+- [x] alembic миграции применяются *(есть в репо; нужен Postgres)*
 
 ### Checkpoint B — Модели и миграции готовы
-- [ ] users
-- [ ] clients
-- [ ] appointments
-- [ ] visits
-- [ ] vision_tests
+- [x] users
+- [x] clients
+- [x] appointments
+- [x] visits
+- [x] vision_tests
 
 ### Checkpoint C — API MVP готово
-- [ ] POST/GET appointments
-- [ ] POST/GET clients
-- [ ] GET client by id
-- [ ] visits endpoints (рекоменд.)
-- [ ] vision_tests endpoints (рекоменд.)
+- [x] POST/GET appointments
+- [x] POST/GET clients
+- [x] GET client by id
+- [x] visits endpoints (рекоменд.)
+- [x] vision_tests endpoints (рекоменд.)
+- [x] публичный booking + новый CRM auth (см. `STATUS.md`, `docs/CRM_TELEGRAM_AUTH.md`)
 
 ### Checkpoint D — CRM MVP готова
-- [ ] список записей
-- [ ] карточка клиента
-- [ ] visits UI
-- [ ] vision tests UI
+- [x] список записей / карточка / visits / vision tests *(UI в Next.js)*
+- [ ] полная связка UI с актуальным API *(см. `STATUS.md`)*
 
 ### Checkpoint E — Лендинг MVP готов
-- [ ] страницы
-- [ ] форма записи работает и сохраняет в БД
+- [x] страницы на локалях
+- [x] форма записи → БД
 
 ### Checkpoint F — MVP готов к демо/магазину
-- [ ] базовые валидации
-- [ ] минимальная защита
-- [ ] деплой/запуск инструкция
+- [x] базовые валидации *(частично)*
+- [ ] минимальная защита / hardening
+- [x] инструкции запуска в README и `STATUS.md`
 

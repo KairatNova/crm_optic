@@ -1,89 +1,86 @@
 # CRM Optic — текущий статус проекта
 
-Дата: 2026-03-18
+Дата обновления: **2026‑03‑20**
 
-## Что сделано
+## Что сделано (актуально в коде)
 
 ### Backend (FastAPI)
 
-- Async DB (`AsyncEngine` + `AsyncSession`), Alembic, базовые модели и MVP API.
-- CRM API:
+- Async DB (`AsyncEngine` + `AsyncSession`), Alembic, модели MVP.
+- **Публичный лендинг:** `POST /public/booking` — создаёт клиента и запись.
+- **CRM API (под JWT):**
   - `GET/POST /clients`, `GET /clients/{id}`
   - `GET/POST /clients/{id}/visits`
   - `GET/POST /clients/{id}/vision-tests`
-  - `GET /appointments`, `PATCH /appointments/{id}`
-- Публичный endpoint лендинга:
-  - `POST /public/booking` (создаёт клиента + запись).
-- CORS добавлен через `CORSMiddleware` (`CORS_ORIGINS`).
+  - `GET/POST /appointments`, `GET /appointments`, `PATCH /appointments/{id}`
+- **CORS:** `CORSMiddleware`, переменная `CORS_ORIGINS`.
+- **Конфиг:** в `app/core/config.py` загружаются только реальные `.env` (без `.env.example`), чтобы секреты не затирались пустыми значениями.
 
-#### Новый auth flow (owner + admins + Telegram code)
+#### Auth для CRM (новый поток: логин + код из Telegram)
 
-- Удалены старые варианты (Telegram Login Widget callback и старый `/users` flow).
-- Реализовано:
-  - `POST /auth/login-request`
-  - `POST /auth/telegram/start` (для Telegram-бота)
-  - `POST /auth/login-verify`
-  - `GET /auth/me`
-  - `POST /owner/admins` (owner only)
-  - `GET /owner/admins` (owner only)
-  - `PATCH /owner/admins/{id}` (owner only)
-- Безопасность:
-  - bcrypt для паролей
-  - hash кода входа
-  - start-token одноразовый + TTL
-  - лимит попыток кода
-- Новые сущности/поля:
-  - `users`: `phone`, `telegram_username`, `telegram_chat_id`, `is_verified`, `created_at`, `updated_at`
-  - `login_verification_codes`
-  - `telegram_pending_links`
-- Миграция:
-  - `0005_owner_admin_login_flow.py`
+- `POST /auth/login-request` — логин (username или телефон) + пароль → ссылка на бота с `start_token`.
+- `POST /auth/telegram/start` — вызывается ботом после `/start` (привязка чата, выдача кода).
+- `POST /auth/login-verify` — проверка кода → JWT.
+- `GET /auth/me` — текущий пользователь.
+- **Owner:** `POST/GET/PATCH /owner/admins` — создание и управление админами (username/phone, пароль и т.д.).
+- Безопасность: bcrypt для паролей, хэш кода, TTL, лимит попыток (см. `docs/CRM_TELEGRAM_AUTH.md`).
+- Миграции: в том числе поток owner/admin (`0005` и связанные изменения схемы `users`).
 
 ### Frontend (Next.js + Tailwind)
 
-- Лендинг mobile-first на `/ru`, `/ky`, `/en`.
-- i18n: словари `ru/ky/en`, редирект `/ -> /ru`, красивый переключатель языка.
-- Мобильное меню, фиксированная CTA-кнопка.
-- Форма записи подключена к backend:
-  - отправка в `POST /public/booking`
-  - валидации, loading/success/error
-  - номер Кыргызстана (`+996...`) нормализуется на фронте
-  - выбор времени через слоты-кнопки (шаг 30 минут)
-- CRM UI добавлен:
-  - `/[locale]/crm/login`
-  - защищённые страницы `/[locale]/crm/(protected)` (dashboard/clients/users)
+- Лендинг mobile-first: `/ru`, `/ky`, `/en`, i18n, редирект `/ → /ru`.
+- Форма записи → `POST /public/booking`, валидация телефона KG, слоты времени.
+- **Каркас CRM:**
+  - `/{locale}/crm/login` (сейчас всё ещё завязан на **старый** Telegram Login Widget и вызовы несуществующих в backend путей — см. ниже).
+  - защищённые страницы: список записей, карточка клиента (visits / vision-tests), страница пользователей для owner.
+- В шапке лендинга кнопка **«Вход»** (и в мобильном меню) → CRM login.
 
-## Текущий этап по MVP
+### Тесты backend
 
-- Checkpoint A: готово в коде, нужен рабочий Postgres + миграции в локальном окружении.
-- Checkpoint B: готово (модели/миграции).
-- Checkpoint C: готово (API MVP + рекомендованные endpoints).
-- Checkpoint D: в разработке (базовый CRM UI уже есть, нужна финальная полировка и привязка к новому auth flow на фронте).
-- Checkpoint E: почти готово (лендинг + рабочая форма записи).
+- В `backend/tests` — pytest: health, public booking, clients, appointments, visits, vision-tests, БД.
+- Запуск из `backend/`: `pytest -q`.
 
-## Что осталось сделать
+---
 
-### 1) Довести CRM auth на фронте под новый flow
+## Важно: расхождение frontend ↔ backend (нужно добить)
 
-- Логин-экран в 2 шага:
-  1. `login-request` (login + password, получить telegram_link)
-  2. `login-verify` (код из Telegram)
-- Хранение JWT и обновление `crm-auth` клиента.
-- Guard для protected CRM-страниц через `GET /auth/me`.
+После коммита **«add new auth»** backend **не** предоставляет:
 
-### 2) Интеграция Telegram-бота
+- `GET /auth/telegram/callback` (Telegram Login Widget),
+- `GET /users/me`, `POST /users`.
 
-- Реализовать обработчик `/start <token>` в боте.
-- Вызов backend: `POST /auth/telegram/start` (+ `X-Bot-Secret`).
-- Отправка пользователю текста с кодом входа.
+Фронт CRM по-прежнему вызывает эти старые эндпоинты → вход и проверка сессии **не совпадают** с текущим API.  
+**Следующий обязательный шаг:** переписать `crm/login`, `crm-api.ts`, `CrmProtectedShell` и страницу users под:
 
-### 3) Запуск и стабилизация окружения
+- `POST /auth/login-request` → открыть `telegram_link` → `POST /auth/login-verify` → сохранить JWT;
+- `GET /auth/me` вместо `/users/me`;
+- `POST/GET/PATCH /owner/admins` вместо `POST /users`.
 
-- Убедиться, что локальный Postgres доступен.
-- Выполнить:
-  - `cd backend`
-  - `.venv\Scripts\alembic upgrade head`
-- Проверить `.env` (JWT, Telegram bot username/secret, CORS, DB URL).
+Подробное описание потока: **`docs/CRM_TELEGRAM_AUTH.md`**.
+
+---
+
+## Чекпоинты MVP (кратко)
+
+| Checkpoint | Статус |
+|------------|--------|
+| A — каркас + Postgres | Код готов; на машине нужны живой Postgres и `alembic upgrade head`. |
+| B — модели/миграции | Готово (включая расширения под новый auth). |
+| C — API MVP | Готово + публичный booking. |
+| D — CRM UI | Каркас есть; **нужна миграция UI на новый auth** + полировка. |
+| E — лендинг | Почти готово (страницы + форма записи). |
+| F — демо/прод | Валидации/деплой — по мере необходимости. |
+
+---
+
+## Что осталось сделать (приоритет)
+
+1. **Синхронизировать CRM frontend с новым backend auth** (см. раздел «Расхождение» выше).
+2. **Telegram-бот:** обработка `/start <token>`, вызов `POST /auth/telegram/start`, отправка кода пользователю.
+3. **Owner bootstrap:** первый owner создаётся через сиды/скрипт/ручную запись в БД с хэшем пароля (уточнить в вашем процессе развёртывания).
+4. **Production roadmap:** kanban, календарь, аналитика — см. `PRODUCTION_PLAN.md`.
+
+---
 
 ## Команды запуска
 
@@ -91,8 +88,8 @@
 
 ```bash
 cd backend
-.venv\Scripts\alembic upgrade head
-.venv\Scripts\uvicorn app.main:app --reload --port 8000
+alembic upgrade head   # или .venv/bin/alembic
+uvicorn app.main:app --reload --port 8000
 ```
 
 ### Frontend
@@ -102,5 +99,4 @@ cd frontend
 npm run dev
 ```
 
-Открыть: `http://localhost:3000/ru`
-
+Открыть лендинг: `http://localhost:3000/ru`

@@ -189,36 +189,39 @@ crm_optic/
 ## 8) Progress / Checkpoints (продолжить с нужного места)
 
 ### Checkpoint A — Проект поднят (backend+db)
-- [ ] docker-compose поднимает Postgres
-- [ ] backend стартует (health endpoint)
-- [ ] alembic миграции применяются
+- [ ] docker-compose поднимает Postgres *(на машине разработчика)*
+- [x] backend стартует (health endpoint)
+- [x] alembic миграции применяются *(в репозитории есть миграции; нужен живой Postgres)*
 
 ### Checkpoint B — Модели и миграции готовы
-- [ ] users
-- [ ] clients
-- [ ] appointments
-- [ ] visits
-- [ ] vision_tests
+- [x] users *(+ поля под новый CRM auth)*
+- [x] clients
+- [x] appointments
+- [x] visits
+- [x] vision_tests
 
 ### Checkpoint C — API MVP готово
-- [ ] POST/GET appointments
-- [ ] POST/GET clients
-- [ ] GET client by id
-- [ ] visits endpoints (рекоменд.)
-- [ ] vision_tests endpoints (рекоменд.)
+- [x] POST/GET appointments
+- [x] POST/GET clients
+- [x] GET client by id
+- [x] visits endpoints (рекоменд.)
+- [x] vision_tests endpoints (рекоменд.)
+- [x] публичный `POST /public/booking`
+- [x] CRM auth: login-request / telegram/start / login-verify, `/auth/me`, `/owner/admins`
 
 ### Checkpoint D — CRM MVP готова
-- [ ] список записей
-- [ ] карточка клиента
-- [ ] visits UI
-- [ ] vision tests UI
+- [x] список записей *(UI есть)*
+- [x] карточка клиента *(UI есть)*
+- [x] visits UI *(UI есть)*
+- [x] vision tests UI *(UI есть)*
+- [ ] **frontend переведён на новый auth** (сейчас часть вызовов устарела — см. `STATUS.md`)
 
 ### Checkpoint E — Лендинг MVP готов
-- [ ] страницы
-- [ ] форма записи работает и сохраняет в БД
+- [x] страницы (главная на локалях)
+- [x] форма записи работает и сохраняет в БД
 
 ### Checkpoint F — MVP готов к демо/магазину
-- [ ] базовые валидации
-- [ ] минимальная защита
-- [ ] деплой/запуск инструкция
+- [x] базовые валидации *(частично: телефон/время на лендинге, API)*
+- [ ] минимальная защита *(rate limit и т.п. — по желанию)*
+- [x] деплой/запуск инструкция *(README + этот файл + `STATUS.md`)*
 

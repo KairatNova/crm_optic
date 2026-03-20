@@ -70,4 +70,10 @@
 - Ограничение попыток ввода кода
 - JWT для CRM-эндпоинтов
 
+---
+
+## Состояние frontend CRM (2026‑03)
+
+Реализованный выше поток **на backend готов**. Страница `/{locale}/crm/login` в Next.js пока может ссылаться на устаревший сценарий (Telegram Login Widget и пути вроде `/auth/telegram/callback`, `/users/me`). Их нужно заменить на шаги из этого документа (`login-request` → бот → `login-verify`, затем `GET /auth/me`). Актуальный чеклист: **`STATUS.md`**.
+
 
