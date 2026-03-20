@@ -87,9 +87,29 @@ async def patch_admin(
 
     if payload.is_active is not None:
         user.is_active = payload.is_active
+    if payload.username is not None:
+        username = normalize_username(payload.username)
+        if username:
+            exists_user = await db.execute(select(User).where(User.username == username, User.id != user_id))
+            if exists_user.scalar_one_or_none() is not None:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="username already exists")
+        user.username = username
     if payload.password:
         user.hashed_password = hash_password(payload.password)
         user.is_verified = False
+    if payload.phone is not None:
+        phone = normalize_phone_kg(payload.phone)
+        if phone:
+            exists_phone = await db.execute(select(User).where(User.phone == phone, User.id != user_id))
+            if exists_phone.scalar_one_or_none() is not None:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="phone already exists")
+        user.phone = phone
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.email is not None:
+        user.email = payload.email.lower().strip() if payload.email else None
+    if payload.telegram_username is not None:
+        user.telegram_username = normalize_username(payload.telegram_username)
 
     await db.commit()
     await db.refresh(user)

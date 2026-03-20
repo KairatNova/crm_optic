@@ -34,6 +34,15 @@ export function middleware(request: NextRequest) {
     return res;
   }
 
+  // CRM всегда на русском.
+  if (seg !== "ru" && pathname.includes("/crm")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(`/${seg}/`, "/ru/");
+    const res = NextResponse.redirect(url);
+    res.cookies.set("locale", "ru", { path: "/" });
+    return res;
+  }
+
   const res = NextResponse.next();
   res.cookies.set("locale", seg, { path: "/" });
   return res;

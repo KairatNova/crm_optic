@@ -147,10 +147,14 @@ async def login_verify(payload: LoginVerifyIn, db: AsyncSession = Depends(get_db
     if user is None or not user.is_active or user.role not in {"owner", "admin"}:
         raise generic_error
 
+    # Берём только самую свежую неиспользованную запись кода.
+    # Иначе при повторном запросе кода (до ввода verification_code) могут появиться несколько строк,
+    # и `scalar_one_or_none()` упадёт с MultipleResultsFound.
     result_code = await db.execute(
         select(LoginVerificationCode)
         .where(LoginVerificationCode.user_id == user.id, LoginVerificationCode.consumed_at.is_(None))
         .order_by(LoginVerificationCode.id.desc())
+        .limit(1)
     )
     code_row = result_code.scalar_one_or_none()
     if code_row is None or code_row.expires_at < utcnow():

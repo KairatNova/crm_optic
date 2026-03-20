@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.models.client import Client
 from app.models.vision_test import VisionTest
-from app.schemas.vision_test import VisionTestCreate, VisionTestRead
+from app.schemas.vision_test import VisionTestCreate, VisionTestPatch, VisionTestRead
 
 
 router = APIRouter(prefix="/clients/{client_id}/vision-tests", tags=["vision-tests"])
@@ -52,5 +52,58 @@ async def create_vision_test(
     db.add(vt)
     await db.commit()
     await db.refresh(vt)
+    return vt
+
+
+@router.patch("/{vision_test_id}", response_model=VisionTestRead)
+async def patch_vision_test(
+    client_id: int,
+    vision_test_id: int,
+    payload: VisionTestPatch,
+    db: AsyncSession = Depends(get_db),
+) -> VisionTest:
+    vt = await db.get(VisionTest, vision_test_id)
+    if vt is None or vt.client_id != client_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vision test not found")
+
+    if payload.tested_at is not None:
+        vt.tested_at = payload.tested_at
+
+    # Для полей-строк просто считаем пустые значения как `None`.
+    for field in [
+        "od_sph",
+        "od_cyl",
+        "od_axis",
+        "os_sph",
+        "os_cyl",
+        "os_axis",
+        "pd",
+        "va_r",
+        "va_l",
+        "lens_type",
+        "frame_model",
+        "comment",
+    ]:
+        if getattr(payload, field) is not None:
+            value = getattr(payload, field)
+            setattr(vt, field, value.strip() if value.strip() else None)
+
+    await db.commit()
+    await db.refresh(vt)
+    return vt
+
+
+@router.delete("/{vision_test_id}", response_model=VisionTestRead)
+async def delete_vision_test(
+    client_id: int,
+    vision_test_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> VisionTest:
+    vt = await db.get(VisionTest, vision_test_id)
+    if vt is None or vt.client_id != client_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vision test not found")
+
+    await db.delete(vt)
+    await db.commit()
     return vt
 

@@ -65,3 +65,8 @@ class OwnerAdminCreate(BaseModel):
 class OwnerAdminPatch(BaseModel):
     is_active: bool | None = None
     password: str | None = None
+    username: str | None = None
+    phone: str | None = None
+    full_name: str | None = None
+    email: str | None = None
+    telegram_username: str | None = None

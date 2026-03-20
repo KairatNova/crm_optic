@@ -1,18 +1,28 @@
-export type CrmRole = "owner" | "admin" | "doctor";
+/** Типы совпадают с backend `AuthUserRead` / `TokenResponse`. */
 
 export type CrmUser = {
   id: number;
-  username: string;
+  username: string | null;
+  phone: string | null;
   full_name: string | null;
   email: string | null;
-  role: CrmRole;
-  telegram_id: number | null;
+  telegram_username: string | null;
+  telegram_chat_id: number | null;
+  role: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
 };
 
 export type TokenResponse = {
   access_token: string;
   token_type: string;
   user: CrmUser;
+};
+
+export type LoginRequestOut = {
+  telegram_link: string;
+  message: string;
 };
 
 export type AppointmentRead = {
@@ -32,6 +42,12 @@ export type ClientRead = {
   email: string | null;
   gender: string | null;
   birth_date: string | null;
+};
+
+export type ClientCardRead = {
+  client: ClientRead;
+  visits: VisitRead[];
+  vision_tests: VisionTestRead[];
 };
 
 export type VisitRead = {
@@ -88,26 +104,43 @@ async function parseJsonOrText<T>(response: Response): Promise<T> {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), init);
   if (!response.ok) {
-    const payload = await parseJsonOrText<{ detail?: string }>(response);
-    const err = new Error(payload.detail || `HTTP ${response.status}`) as ApiError;
+    const payload = await parseJsonOrText<{ detail?: string | unknown }>(response);
+    const detail = payload.detail;
+    const msg =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? JSON.stringify(detail)
+          : detail && typeof detail === "object"
+            ? JSON.stringify(detail)
+            : `HTTP ${response.status}`;
+    const err = new Error(msg) as ApiError;
     err.status = response.status;
     throw err;
   }
   return parseJsonOrText<T>(response);
 }
 
-export async function loginByTelegramCallback(params: Record<string, string | number>): Promise<TokenResponse> {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    search.set(key, String(value));
-  }
-  return request<TokenResponse>(`/auth/telegram/callback?${search.toString()}`, {
-    method: "GET",
+/** Шаг 1: логин (username или телефон) + пароль → ссылка на бота. */
+export async function authLoginRequest(payload: { login: string; password: string }): Promise<LoginRequestOut> {
+  return request<LoginRequestOut>("/auth/login-request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Шаг 2: тот же логин + 6-значный код из Telegram → JWT. */
+export async function authLoginVerify(payload: { login: string; verification_code: string }): Promise<TokenResponse> {
+  return request<TokenResponse>("/auth/login-verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 }
 
 export async function getMe(token: string): Promise<CrmUser> {
-  return request<CrmUser>("/users/me", { headers: withAuth(token) });
+  return request<CrmUser>("/auth/me", { headers: withAuth(token) });
 }
 
 export async function getAppointments(token: string, statusFilter?: string): Promise<AppointmentRead[]> {
@@ -131,8 +164,64 @@ export async function getClient(token: string, clientId: number): Promise<Client
   return request<ClientRead>(`/clients/${clientId}`, { headers: withAuth(token) });
 }
 
+export async function getClientCard(token: string, clientId: number): Promise<ClientCardRead> {
+  return request<ClientCardRead>(`/clients/${clientId}/card`, { headers: withAuth(token) });
+}
+
+export async function patchClient(
+  token: string,
+  clientId: number,
+  payload: {
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    gender?: string | null;
+    birth_date?: string | null;
+  },
+): Promise<ClientRead> {
+  return request<ClientRead>(`/clients/${clientId}`, {
+    method: "PATCH",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getClients(token: string): Promise<ClientRead[]> {
+  return request<ClientRead[]>("/clients", { headers: withAuth(token) });
+}
+
+export async function createClient(
+  token: string,
+  payload: {
+    name: string;
+    phone: string;
+    email?: string | null;
+    gender?: string | null;
+    birth_date?: string | null;
+  },
+): Promise<ClientRead> {
+  return request<ClientRead>("/clients", {
+    method: "POST",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getVisits(token: string, clientId: number): Promise<VisitRead[]> {
   return request<VisitRead[]>(`/clients/${clientId}/visits`, { headers: withAuth(token) });
+}
+
+export async function patchVisit(
+  token: string,
+  clientId: number,
+  visitId: number,
+  payload: { visited_at?: string | null; comment?: string | null },
+): Promise<VisitRead> {
+  return request<VisitRead>(`/clients/${clientId}/visits/${visitId}`, {
+    method: "PATCH",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function createVisit(
@@ -147,8 +236,75 @@ export async function createVisit(
   });
 }
 
+export async function createVisitAndVisionTest(
+  token: string,
+  clientId: number,
+  payload: {
+    visit: { visited_at?: string; comment?: string | null };
+    vision_test: {
+      tested_at?: string;
+      od_sph?: string | null;
+      od_cyl?: string | null;
+      od_axis?: string | null;
+      os_sph?: string | null;
+      os_cyl?: string | null;
+      os_axis?: string | null;
+      pd?: string | null;
+      va_r?: string | null;
+      va_l?: string | null;
+      lens_type?: string | null;
+      frame_model?: string | null;
+      comment?: string | null;
+    };
+  },
+): Promise<{ visit: VisitRead; vision_test: VisionTestRead }> {
+  return request<{ visit: VisitRead; vision_test: VisionTestRead }>(`/clients/${clientId}/visit-and-vision`, {
+    method: "POST",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getVisionTests(token: string, clientId: number): Promise<VisionTestRead[]> {
   return request<VisionTestRead[]>(`/clients/${clientId}/vision-tests`, { headers: withAuth(token) });
+}
+
+export async function patchVisionTest(
+  token: string,
+  clientId: number,
+  visionTestId: number,
+  payload: {
+    tested_at?: string | null;
+    od_sph?: string | null;
+    od_cyl?: string | null;
+    od_axis?: string | null;
+    os_sph?: string | null;
+    os_cyl?: string | null;
+    os_axis?: string | null;
+    pd?: string | null;
+    va_r?: string | null;
+    va_l?: string | null;
+    lens_type?: string | null;
+    frame_model?: string | null;
+    comment?: string | null;
+  },
+): Promise<VisionTestRead> {
+  return request<VisionTestRead>(`/clients/${clientId}/vision-tests/${visionTestId}`, {
+    method: "PATCH",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteVisionTest(
+  token: string,
+  clientId: number,
+  visionTestId: number,
+): Promise<VisionTestRead> {
+  return request<VisionTestRead>(`/clients/${clientId}/vision-tests/${visionTestId}`, {
+    method: "DELETE",
+    headers: withAuth(token),
+  });
 }
 
 export async function createVisionTest(
@@ -177,14 +333,56 @@ export async function createVisionTest(
   });
 }
 
-export async function createAdminByTelegramId(
+export async function deleteVisit(
   token: string,
-  payload: { telegram_id: number; full_name?: string; email?: string; role?: "admin" | "doctor" },
+  clientId: number,
+  visitId: number,
+): Promise<VisitRead> {
+  return request<VisitRead>(`/clients/${clientId}/visits/${visitId}`, {
+    method: "DELETE",
+    headers: withAuth(token),
+  });
+}
+
+export async function listOwnerAdmins(token: string): Promise<CrmUser[]> {
+  return request<CrmUser[]>("/owner/admins", { headers: withAuth(token) });
+}
+
+export async function createOwnerAdmin(
+  token: string,
+  payload: {
+    username?: string | null;
+    phone?: string | null;
+    password: string;
+    full_name?: string | null;
+    email?: string | null;
+    telegram_username?: string | null;
+    role?: "admin";
+  },
 ): Promise<CrmUser> {
-  return request<CrmUser>("/users", {
+  return request<CrmUser>("/owner/admins", {
     method: "POST",
     headers: withAuth(token),
     body: JSON.stringify(payload),
   });
 }
 
+export async function patchOwnerAdmin(
+  token: string,
+  adminId: number,
+  payload: {
+    is_active?: boolean;
+    password?: string | null;
+    username?: string | null;
+    phone?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+    telegram_username?: string | null;
+  },
+): Promise<CrmUser> {
+  return request<CrmUser>(`/owner/admins/${adminId}`, {
+    method: "PATCH",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
+}

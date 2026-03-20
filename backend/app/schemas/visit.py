@@ -16,3 +16,8 @@ class VisitRead(BaseModel):
     visited_at: datetime
     comment: str | None = None
 
+
+class VisitPatch(BaseModel):
+    visited_at: datetime | None = None
+    comment: str | None = None
+

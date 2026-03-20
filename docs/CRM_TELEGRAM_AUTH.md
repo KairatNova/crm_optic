@@ -72,8 +72,8 @@
 
 ---
 
-## Состояние frontend CRM (2026‑03)
+## Состояние frontend CRM
 
-Реализованный выше поток **на backend готов**. Страница `/{locale}/crm/login` в Next.js пока может ссылаться на устаревший сценарий (Telegram Login Widget и пути вроде `/auth/telegram/callback`, `/users/me`). Их нужно заменить на шаги из этого документа (`login-request` → бот → `login-verify`, затем `GET /auth/me`). Актуальный чеклист: **`STATUS.md`**.
+Страница `/{locale}/crm/login`: **логин + пароль** → `POST /auth/login-request` → ссылка на бота → **код** → `POST /auth/login-verify` → JWT в `localStorage`, сессия проверяется через **`GET /auth/me`**. Управление админами у owner: **`POST/GET/PATCH /owner/admins`** (`frontend/src/app/[locale]/crm/(protected)/users/page.tsx`). Актуальный чеклист: **`STATUS.md`**.
 
 

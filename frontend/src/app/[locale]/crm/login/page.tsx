@@ -2,120 +2,165 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import type { Locale } from "@/i18n/locales";
-import { loginByTelegramCallback } from "@/lib/crm-api";
+import { authLoginRequest, authLoginVerify } from "@/lib/crm-api";
 import { saveCrmSession } from "@/lib/crm-auth";
 
-type TelegramWidgetUser = {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  auth_date: number;
-  hash: string;
-};
-
-declare global {
-  interface Window {
-    onTelegramAuth?: (user: TelegramWidgetUser) => void;
-  }
-}
+type Step = "credentials" | "telegram";
 
 export default function CrmLoginPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
   const locale = (params.locale || "ru") as Locale;
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
-  const [message, setMessage] = useState<string | null>(null);
 
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "";
+  const [step, setStep] = useState<Step>("credentials");
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [hintMessage, setHintMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !botUsername) return;
+  async function onRequestCode() {
+    setError(null);
+    setHintMessage(null);
+    if (!login.trim() || !password) {
+      setError("Введите логин и пароль.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const out = await authLoginRequest({ login: login.trim(), password });
+      setTelegramLink(out.telegram_link);
+      setHintMessage(out.message);
+      setStep("telegram");
+      setCode("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось запросить код");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    window.onTelegramAuth = async (user: TelegramWidgetUser) => {
-      setStatus("loading");
-      setMessage(null);
-      try {
-        const payload: Record<string, string | number> = {};
-        for (const [key, value] of Object.entries(user)) {
-          if (value !== undefined && value !== null) {
-            payload[key] = value as string | number;
-          }
-        }
-        const token = await loginByTelegramCallback(payload);
-        saveCrmSession(token.access_token, token.user);
-        router.replace(`/${locale}/crm`);
-      } catch (e) {
-        setStatus("error");
-        setMessage(e instanceof Error ? e.message : "Ошибка входа");
-      }
-    };
+  async function onVerify() {
+    setError(null);
+    const trimmed = code.replace(/\s/g, "");
+    if (!trimmed || trimmed.length !== 6) {
+      setError("Введите 6-значный код из Telegram.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const token = await authLoginVerify({ login: login.trim(), verification_code: trimmed });
+      saveCrmSession(token.access_token, token.user);
+      router.replace(`/${locale}/crm`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Неверный код или срок действия истёк");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    container.innerHTML = "";
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute("data-telegram-login", botUsername);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-radius", "10");
-    script.setAttribute("data-userpic", "false");
-    script.setAttribute("data-request-access", "write");
-    script.setAttribute("data-onauth", "onTelegramAuth(user)");
-    container.appendChild(script);
-
-    return () => {
-      if (window.onTelegramAuth) {
-        delete window.onTelegramAuth;
-      }
-      container.innerHTML = "";
-    };
-  }, [botUsername, locale, router]);
+  function onBackToCredentials() {
+    setStep("credentials");
+    setTelegramLink(null);
+    setHintMessage(null);
+    setCode("");
+    setError(null);
+  }
 
   return (
     <div className="grid min-h-screen place-items-center bg-slate-100 p-4">
       <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-slate-900">CRM Login</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Вход в CRM</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Вход для администраторов и врачей через Telegram Login Widget.
+          Для <strong>владельца</strong> и <strong>администраторов</strong>: логин (имя пользователя или телефон в формате{" "}
+          <code className="rounded bg-slate-100 px-1 text-xs">+996…</code>), пароль, затем код из Telegram-бота.
         </p>
 
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Вариант 1 (реализован)</div>
-          <p className="mt-2 text-sm text-slate-700">
-            Официальная кнопка Telegram. Доступ получают только пользователи, которых owner добавил по{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">telegram_id</code> (первый owner — через env на backend).
-          </p>
-          <div className="mt-4">
-            {!botUsername ? (
-              <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Укажите <code>NEXT_PUBLIC_TELEGRAM_BOT_USERNAME</code> в <code>frontend/.env.local</code>.
-              </div>
-            ) : (
-              <div ref={containerRef} />
-            )}
+        {step === "credentials" ? (
+          <div className="mt-6 space-y-4">
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Логин</span>
+              <input
+                type="text"
+                autoComplete="username"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+                placeholder="username или +996700123456"
+                className="h-11 rounded-xl border border-slate-300 px-3"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Пароль</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11 rounded-xl border border-slate-300 px-3"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void onRequestCode()}
+              className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
+            >
+              {loading ? "Отправляем…" : "Получить код в Telegram"}
+            </button>
           </div>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Вариант 2 (план)</div>
-          <p className="mt-2 text-sm text-slate-700">
-            Вход по номеру телефона + OTP в Telegram-боте (будет добавлен позже).
-          </p>
-        </div>
-
-        {status === "loading" ? (
-          <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-900">
-            Проверяем Telegram авторизацию...
+        ) : (
+          <div className="mt-6 space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              {hintMessage ? <p className="whitespace-pre-wrap">{hintMessage}</p> : null}
+              {telegramLink ? (
+                <a
+                  href={telegramLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                >
+                  Открыть бота в Telegram
+                </a>
+              ) : null}
+            </div>
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Код из Telegram (6 цифр)</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                placeholder="000000"
+                className="h-11 rounded-xl border border-slate-300 px-3 font-mono text-lg tracking-widest"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void onVerify()}
+              className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
+            >
+              {loading ? "Проверяем…" : "Войти"}
+            </button>
+            <button
+              type="button"
+              onClick={onBackToCredentials}
+              className="w-full rounded-xl border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Назад: другой логин или пароль
+            </button>
           </div>
-        ) : null}
-        {status === "error" && message ? (
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{message}</div>
+        )}
+
+        {error ? (
+          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{error}</div>
         ) : null}
 
         <div className="mt-6">
@@ -130,4 +175,3 @@ export default function CrmLoginPage() {
     </div>
   );
 }
-

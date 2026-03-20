@@ -10,6 +10,7 @@ from app.api.routers.owner_admins import router as owner_admins_router
 from app.api.routers.public_booking import router as public_booking_router
 from app.api.routers.visits import router as visits_router
 from app.api.routers.vision_tests import router as vision_tests_router
+from app.api.routers.visit_and_vision import router as visit_and_vision_router
 from app.core.config import get_settings
 
 _crm_deps = [Depends(get_current_user)]
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(appointments_router, dependencies=_crm_deps)
     app.include_router(visits_router, dependencies=_crm_deps)
     app.include_router(vision_tests_router, dependencies=_crm_deps)
+    app.include_router(visit_and_vision_router, dependencies=_crm_deps)
     return app
 
 

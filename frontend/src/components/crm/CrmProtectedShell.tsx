@@ -17,6 +17,10 @@ type CrmSession = {
 
 const CrmSessionContext = createContext<CrmSession | null>(null);
 
+function displayName(u: CrmUser): string {
+  return u.full_name || u.username || u.phone || `User #${u.id}`;
+}
+
 export function useCrmSession(): CrmSession {
   const ctx = useContext(CrmSessionContext);
   if (!ctx) {
@@ -92,8 +96,9 @@ export function CrmProtectedShell({
   }
 
   const links = [
-    { href: `/${locale}/crm`, label: "Appointments" },
-    { href: `/${locale}/crm/users`, label: "Users (owner)" },
+    { href: `/${locale}/crm`, label: "Записи" },
+    { href: `/${locale}/crm/clients`, label: "Клиенты" },
+    { href: `/${locale}/crm/users`, label: "Пользователи" },
   ];
 
   return (
@@ -103,7 +108,7 @@ export function CrmProtectedShell({
           <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-slate-700/50 bg-slate-900 text-slate-100 lg:flex">
             <div className="border-b border-slate-700/70 p-5">
               <div className="text-xs tracking-wide text-slate-400">CRM Optic</div>
-              <div className="mt-1 text-lg font-bold">Dashboard</div>
+              <div className="mt-1 text-lg font-bold">Панель</div>
             </div>
             <nav className="flex-1 space-y-1 p-3">
               {links.map((link) => {
@@ -112,6 +117,7 @@ export function CrmProtectedShell({
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={false}
                     className={[
                       "block rounded-xl px-3 py-2 text-sm font-medium transition",
                       active ? "bg-teal-500/20 text-teal-200" : "text-slate-300 hover:bg-slate-800 hover:text-white",
@@ -123,8 +129,8 @@ export function CrmProtectedShell({
               })}
             </nav>
             <div className="border-t border-slate-700/70 p-4 text-xs text-slate-300">
-              <div className="font-semibold text-slate-100">{session.user.full_name || session.user.username}</div>
-              <div className="mt-1 text-slate-400">Role: {session.user.role}</div>
+              <div className="font-semibold text-slate-100">{displayName(session.user)}</div>
+              <div className="mt-1 text-slate-400">Роль: {session.user.role}</div>
               <button
                 type="button"
                 onClick={session.logout}
@@ -139,9 +145,9 @@ export function CrmProtectedShell({
             <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-500">CRM Panel</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Панель CRM</div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {session.user.full_name || session.user.username} ({session.user.role})
+                    {displayName(session.user)} ({session.user.role})
                   </div>
                 </div>
                 <button

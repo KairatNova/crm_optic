@@ -31,8 +31,8 @@
 - Лендинг mobile-first: `/ru`, `/ky`, `/en`, i18n, редирект `/ → /ru`.
 - Форма записи → `POST /public/booking`, валидация телефона KG, слоты времени.
 - **Каркас CRM:**
-  - `/{locale}/crm/login` (сейчас всё ещё завязан на **старый** Telegram Login Widget и вызовы несуществующих в backend путей — см. ниже).
-  - защищённые страницы: список записей, карточка клиента (visits / vision-tests), страница пользователей для owner.
+  - `/{locale}/crm/login` — **новый поток:** `login-request` → бот → `login-verify`, JWT + `GET /auth/me`.
+  - защищённые страницы: список записей, карточка клиента (visits / vision-tests), страница админов для owner (`/owner/admins`).
 - В шапке лендинга кнопка **«Вход»** (и в мобильном меню) → CRM login.
 
 ### Тесты backend
@@ -42,21 +42,9 @@
 
 ---
 
-## Важно: расхождение frontend ↔ backend (нужно добить)
+## Frontend ↔ backend (auth)
 
-После коммита **«add new auth»** backend **не** предоставляет:
-
-- `GET /auth/telegram/callback` (Telegram Login Widget),
-- `GET /users/me`, `POST /users`.
-
-Фронт CRM по-прежнему вызывает эти старые эндпоинты → вход и проверка сессии **не совпадают** с текущим API.  
-**Следующий обязательный шаг:** переписать `crm/login`, `crm-api.ts`, `CrmProtectedShell` и страницу users под:
-
-- `POST /auth/login-request` → открыть `telegram_link` → `POST /auth/login-verify` → сохранить JWT;
-- `GET /auth/me` вместо `/users/me`;
-- `POST/GET/PATCH /owner/admins` вместо `POST /users`.
-
-Подробное описание потока: **`docs/CRM_TELEGRAM_AUTH.md`**.
+CRM UI синхронизирован с текущим API: без Telegram Login Widget, без `/auth/telegram/callback` и `/users/me`. Подробности: **`docs/CRM_TELEGRAM_AUTH.md`**.
 
 ---
 
@@ -67,7 +55,7 @@
 | A — каркас + Postgres | Код готов; на машине нужны живой Postgres и `alembic upgrade head`. |
 | B — модели/миграции | Готово (включая расширения под новый auth). |
 | C — API MVP | Готово + публичный booking. |
-| D — CRM UI | Каркас есть; **нужна миграция UI на новый auth** + полировка. |
+| D — CRM UI | Каркас + **новый auth на фронте**; полировка по мере необходимости. |
 | E — лендинг | Почти готово (страницы + форма записи). |
 | F — демо/прод | Валидации/деплой — по мере необходимости. |
 
@@ -75,10 +63,9 @@
 
 ## Что осталось сделать (приоритет)
 
-1. **Синхронизировать CRM frontend с новым backend auth** (см. раздел «Расхождение» выше).
-2. **Telegram-бот:** обработка `/start <token>`, вызов `POST /auth/telegram/start`, отправка кода пользователю.
-3. **Owner bootstrap:** первый owner создаётся через сиды/скрипт/ручную запись в БД с хэшем пароля (уточнить в вашем процессе развёртывания).
-4. **Production roadmap:** kanban, календарь, аналитика — см. `PRODUCTION_PLAN.md`.
+1. **Telegram-бот:** обработка `/start <token>`, вызов `POST /auth/telegram/start`, отправка кода пользователю.
+2. **Owner bootstrap:** первый owner создаётся через сиды/скрипт/ручную запись в БД с хэшем пароля (уточнить в вашем процессе развёртывания).
+3. **Production roadmap:** kanban, календарь, аналитика — см. `PRODUCTION_PLAN.md`.
 
 ---
 

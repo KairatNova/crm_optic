@@ -48,7 +48,7 @@ export default function CrmAppointmentsPage() {
           const c = clientsMap.get(a.client_id);
           return {
             ...a,
-            client_name: c?.name || "Unknown",
+            client_name: c?.name || "Неизвестно",
             client_phone: c?.phone || "",
           };
         });
@@ -90,7 +90,7 @@ export default function CrmAppointmentsPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <h1 className="text-xl font-bold">Appointments</h1>
+        <h1 className="text-xl font-bold">Записи</h1>
         <p className="mt-1 text-sm text-slate-600">Список записей из CRM, фильтр по статусу и периоду.</p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -101,9 +101,9 @@ export default function CrmAppointmentsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="h-10 rounded-xl border border-slate-300 bg-white px-3"
             >
-              <option value="all">all</option>
-              <option value="new">new</option>
-              <option value="done">done</option>
+              <option value="all">все</option>
+              <option value="new">новые</option>
+              <option value="done">выполненные</option>
             </select>
           </label>
           <label className="grid gap-1 text-sm">
@@ -159,7 +159,7 @@ export default function CrmAppointmentsPage() {
                 <tr key={row.id} className="border-t border-slate-100">
                   <td className="px-4 py-3 font-medium">
                     <Link href={`/${locale}/crm/clients/${row.client_id}`} className="text-teal-700 hover:underline">
-                      {row.client_name || `Client #${row.client_id}`}
+                      {row.client_name || `Клиент #${row.client_id}`}
                     </Link>
                   </td>
                   <td className="px-4 py-3">{row.client_phone || "—"}</td>
