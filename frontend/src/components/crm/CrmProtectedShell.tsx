@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { Toaster } from "sonner";
 
 import type { CrmUser } from "@/lib/crm-api";
 import { getMe } from "@/lib/crm-api";
@@ -104,6 +105,7 @@ export function CrmProtectedShell({
 
   return (
     <CrmSessionContext.Provider value={session}>
+      <Toaster position="top-right" richColors closeButton />
       <div className="min-h-screen bg-slate-100 text-slate-900">
         <div className="mx-auto flex max-w-[1400px]">
           <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-slate-700/50 bg-slate-900 text-slate-100 lg:flex">

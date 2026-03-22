@@ -44,6 +44,45 @@ async def test_public_booking_creates_appointment_and_client(api_client, auth_he
 
 
 @pytest.mark.asyncio
+async def test_public_booking_reuses_client_on_same_phone(api_client, auth_headers):
+    phone = "+996700999888"
+    payload1 = {
+        "name": "Первый",
+        "phone": phone,
+        "email": "a@example.com",
+        "gender": "male",
+        "birth_date": "1990-01-01",
+        "service": "Vision test",
+        "starts_at": future_iso(2),
+        "comment": "first",
+    }
+    res1 = await api_client.post("/public/booking", json=payload1)
+    assert res1.status_code == 201, res1.text
+    appt1 = res1.json()
+    cid = appt1["client_id"]
+
+    payload2 = {
+        "name": "Другое имя",
+        "phone": phone,
+        "email": "b@example.com",
+        "gender": "female",
+        "birth_date": "1992-02-02",
+        "service": "Contact lenses",
+        "starts_at": future_iso(3),
+        "comment": "second",
+    }
+    res2 = await api_client.post("/public/booking", json=payload2)
+    assert res2.status_code == 201, res2.text
+    appt2 = res2.json()
+    assert appt2["client_id"] == cid
+    assert appt2["id"] != appt1["id"]
+
+    res_client = await api_client.get(f"/clients/{cid}", headers=auth_headers)
+    assert res_client.status_code == 200
+    assert res_client.json()["name"] == "Первый"
+
+
+@pytest.mark.asyncio
 async def test_public_booking_rejects_past_datetime(api_client):
     payload = {
         "name": "Иван",

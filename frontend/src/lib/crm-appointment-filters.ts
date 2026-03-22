@@ -1,4 +1,13 @@
-import type { AppointmentStatus } from "@/lib/crm-api";
+import type { AppointmentRead, AppointmentStatus } from "@/lib/crm-api";
+
+/** Запись в прошлом и не в финальном статусе — для подсветки «просрочено». */
+export function isAppointmentOverdue(row: Pick<AppointmentRead, "starts_at" | "status">): boolean {
+  const t = new Date(row.starts_at).getTime();
+  if (Number.isNaN(t) || t >= Date.now()) return false;
+  const s = row.status || "new";
+  if (s === "done" || s === "cancelled") return false;
+  return true;
+}
 
 /** Как в `i18n/ru.ts` → `booking.form.serviceOptions`, плюс EN/тестовые алиасы. */
 export type BoardServiceFilter = "all" | "vision_check" | "frames_lenses" | "contact_lenses" | "service_repair";
@@ -85,4 +94,18 @@ export function appointmentStatusBadgeClass(status: string | null | undefined): 
     default:
       return "bg-slate-100 text-slate-800";
   }
+}
+
+/** Коды причины отмены (строка в API cancellation_reason); для «Другое» — произвольный текст. */
+export const CRM_CANCELLATION_REASONS: { value: string; label: string }[] = [
+  { value: "client_request", label: "Инициатива клиента" },
+  { value: "no_show", label: "Неявка" },
+  { value: "rescheduled", label: "Перенос на другое время" },
+  { value: "staff", label: "Решение клиники" },
+  { value: "other", label: "Другое (текст)" },
+];
+
+export function isPredefinedCancellationReason(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return CRM_CANCELLATION_REASONS.some((r) => r.value === value && r.value !== "other");
 }

@@ -10,6 +10,7 @@ from app.models.appointment import Appointment
 from app.models.client import Client
 from app.schemas.appointment import AppointmentRead
 from app.schemas.public_booking import PublicBookingCreate
+from app.services.client_lookup import find_active_client_by_phone
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -23,15 +24,19 @@ async def public_booking(payload: PublicBookingCreate, db: AsyncSession = Depend
     if starts_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="starts_at must not be in the past")
 
-    client = Client(
-        name=payload.name,
-        phone=payload.phone,
-        email=str(payload.email) if payload.email else None,
-        gender=payload.gender,
-        birth_date=payload.birth_date,
-    )
-    db.add(client)
-    await db.flush()
+    existing = await find_active_client_by_phone(db, payload.phone)
+    if existing is not None:
+        client = existing
+    else:
+        client = Client(
+            name=payload.name,
+            phone=payload.phone,
+            email=str(payload.email) if payload.email else None,
+            gender=payload.gender,
+            birth_date=payload.birth_date,
+        )
+        db.add(client)
+        await db.flush()
 
     appt = Appointment(
         client_id=client.id,

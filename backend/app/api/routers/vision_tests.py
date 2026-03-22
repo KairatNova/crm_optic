@@ -16,7 +16,7 @@ router = APIRouter(prefix="/clients/{client_id}/vision-tests", tags=["vision-tes
 @router.get("", response_model=list[VisionTestRead])
 async def list_vision_tests(client_id: int, db: AsyncSession = Depends(get_db)) -> list[VisionTest]:
     client = await db.get(Client, client_id)
-    if client is None:
+    if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
     result = await db.execute(
@@ -30,7 +30,7 @@ async def create_vision_test(
     client_id: int, payload: VisionTestCreate, db: AsyncSession = Depends(get_db)
 ) -> VisionTest:
     client = await db.get(Client, client_id)
-    if client is None:
+    if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
     vt = VisionTest(

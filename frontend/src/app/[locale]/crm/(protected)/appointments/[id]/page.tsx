@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
 import {
   APPOINTMENT_STATUSES,
   APPOINTMENT_STATUS_LABELS,
+  CRM_CANCELLATION_REASONS,
   isKnownAppointmentStatus,
+  isPredefinedCancellationReason,
 } from "@/lib/crm-appointment-filters";
 import type { AppointmentDetailRead, AppointmentStatus } from "@/lib/crm-api";
 import { getAppointmentDetail, patchAppointment } from "@/lib/crm-api";
@@ -44,6 +47,8 @@ export default function AppointmentDetailPage() {
   const [editStartsAt, setEditStartsAt] = useState("");
   const [editStatus, setEditStatus] = useState<AppointmentStatus>("new");
   const [editComment, setEditComment] = useState("");
+  const [editCancelReasonCode, setEditCancelReasonCode] = useState("client_request");
+  const [editCancelReasonOther, setEditCancelReasonOther] = useState("");
 
   const load = useCallback(async () => {
     if (Number.isNaN(appointmentId)) {
@@ -60,6 +65,17 @@ export default function AppointmentDetailPage() {
       setEditStartsAt(toDatetimeLocalValue(d.starts_at));
       setEditStatus(isKnownAppointmentStatus(d.status) ? d.status : "new");
       setEditComment(d.comment || "");
+      const cr = d.cancellation_reason;
+      if (cr && isPredefinedCancellationReason(cr)) {
+        setEditCancelReasonCode(cr);
+        setEditCancelReasonOther("");
+      } else if (cr) {
+        setEditCancelReasonCode("other");
+        setEditCancelReasonOther(cr);
+      } else {
+        setEditCancelReasonCode("client_request");
+        setEditCancelReasonOther("");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось загрузить запись");
       setDetail(null);
@@ -78,12 +94,17 @@ export default function AppointmentDetailPage() {
     setError(null);
     try {
       const startsIso = new Date(editStartsAt).toISOString();
-      const updated = await patchAppointment(token, appointmentId, {
+      const patchBody: Parameters<typeof patchAppointment>[2] = {
         service: editService.trim() || null,
         starts_at: startsIso,
         status: editStatus,
         comment: editComment.trim() || null,
-      });
+      };
+      if (editStatus === "cancelled") {
+        patchBody.cancellation_reason =
+          editCancelReasonCode === "other" ? editCancelReasonOther.trim() || null : editCancelReasonCode;
+      }
+      const updated = await patchAppointment(token, appointmentId, patchBody);
       setDetail((prev) =>
         prev
           ? {
@@ -93,8 +114,11 @@ export default function AppointmentDetailPage() {
             }
           : null,
       );
+      toast.success("Изменения сохранены");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось сохранить");
+      const msg = e instanceof Error ? e.message : "Не удалось сохранить";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -161,6 +185,31 @@ export default function AppointmentDetailPage() {
                     ))}
                   </select>
                 </label>
+                {editStatus === "cancelled" ? (
+                  <div className="space-y-2 rounded-xl border border-rose-100 bg-rose-50/50 p-3">
+                    <div className="text-xs font-medium text-rose-900">Причина отмены</div>
+                    <select
+                      value={editCancelReasonCode}
+                      onChange={(e) => setEditCancelReasonCode(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm"
+                    >
+                      {CRM_CANCELLATION_REASONS.map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
+                    {editCancelReasonCode === "other" ? (
+                      <textarea
+                        value={editCancelReasonOther}
+                        onChange={(e) => setEditCancelReasonOther(e.target.value)}
+                        rows={2}
+                        placeholder="Уточнение…"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Комментарий</span>
                   <textarea

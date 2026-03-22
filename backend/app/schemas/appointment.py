@@ -22,6 +22,7 @@ class AppointmentPatch(BaseModel):
     status: str | None = None
     comment: str | None = None
     service: str | None = None
+    cancellation_reason: str | None = None
 
 
 class AppointmentRead(AppointmentBase):
@@ -29,6 +30,7 @@ class AppointmentRead(AppointmentBase):
     id: int
     created_at: datetime
     source: str | None = None
+    cancellation_reason: str | None = None
 
 
 class AppointmentDetailRead(AppointmentRead):

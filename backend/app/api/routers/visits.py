@@ -16,7 +16,7 @@ router = APIRouter(prefix="/clients/{client_id}/visits", tags=["visits"])
 @router.get("", response_model=list[VisitRead])
 async def list_visits(client_id: int, db: AsyncSession = Depends(get_db)) -> list[Visit]:
     client = await db.get(Client, client_id)
-    if client is None:
+    if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
     result = await db.execute(
@@ -28,7 +28,7 @@ async def list_visits(client_id: int, db: AsyncSession = Depends(get_db)) -> lis
 @router.post("", response_model=VisitRead, status_code=status.HTTP_201_CREATED)
 async def create_visit(client_id: int, payload: VisitCreate, db: AsyncSession = Depends(get_db)) -> Visit:
     client = await db.get(Client, client_id)
-    if client is None:
+    if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
     visit = Visit(

@@ -36,6 +36,7 @@ export type AppointmentRead = {
   status: string | null;
   comment: string | null;
   created_at: string;
+  cancellation_reason?: string | null;
   /** landing — с сайта; crm — из CRM; отсутствует у старых записей */
   source?: string | null;
 };
@@ -158,6 +159,23 @@ export async function getAppointments(token: string, statusFilter?: string): Pro
   return request<AppointmentRead[]>(`/appointments${qs}`, { headers: withAuth(token) });
 }
 
+export async function createAppointment(
+  token: string,
+  payload: {
+    client_id: number;
+    service?: string | null;
+    starts_at: string;
+    status?: AppointmentStatus | string | null;
+    comment?: string | null;
+  },
+): Promise<AppointmentRead> {
+  return request<AppointmentRead>("/appointments", {
+    method: "POST",
+    headers: withAuth(token),
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getAppointmentDetail(token: string, appointmentId: number): Promise<AppointmentDetailRead> {
   return request<AppointmentDetailRead>(`/appointments/${appointmentId}`, { headers: withAuth(token) });
 }
@@ -170,6 +188,7 @@ export async function patchAppointment(
     comment?: string | null;
     service?: string | null;
     starts_at?: string;
+    cancellation_reason?: string | null;
   },
 ): Promise<AppointmentRead> {
   return request<AppointmentRead>(`/appointments/${appointmentId}`, {
@@ -181,6 +200,18 @@ export async function patchAppointment(
 
 export async function getClient(token: string, clientId: number): Promise<ClientRead> {
   return request<ClientRead>(`/clients/${clientId}`, { headers: withAuth(token) });
+}
+
+export async function lookupClientByPhone(token: string, phone: string): Promise<ClientRead | null> {
+  try {
+    return await request<ClientRead>(`/clients/lookup?phone=${encodeURIComponent(phone)}`, {
+      headers: withAuth(token),
+    });
+  } catch (e: unknown) {
+    const st = typeof e === "object" && e !== null && "status" in e ? (e as ApiError).status : undefined;
+    if (st === 404) return null;
+    throw e;
+  }
 }
 
 export async function getClientCard(token: string, clientId: number): Promise<ClientCardRead> {

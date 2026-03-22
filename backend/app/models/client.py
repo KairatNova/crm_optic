@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, Integer, String
+from sqlalchemy import Column, Date, DateTime, Integer, String
 
 from app.models.base import Base
 
@@ -12,4 +12,5 @@ class Client(Base):
     email = Column(String(255), nullable=True)
     gender = Column(String(16), nullable=True)
     birth_date = Column(Date, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 

@@ -21,6 +21,7 @@ from app.core.config import get_settings
 from app.core.jwt_tokens import create_access_token
 from app.main import create_app
 from app.models.appointment import Appointment
+from app.models.appointment_audit import AppointmentAudit  # noqa: F401
 from app.models.base import Base
 from app.models.client import Client
 from app.models.user import User

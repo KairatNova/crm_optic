@@ -19,7 +19,7 @@ async def create_visit_and_vision_test(
     db: AsyncSession = Depends(get_db),
 ) -> VisitAndVisionCreateOut:
     client = await db.get(Client, client_id)
-    if client is None:
+    if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
     visit_payload = payload.visit

@@ -15,9 +15,11 @@ class Appointment(Base):
     starts_at = Column(DateTime(timezone=True), nullable=False)
     status = Column(String(32), nullable=False, server_default="new")
     comment = Column(String(1000), nullable=True)
+    cancellation_reason = Column(String(255), nullable=True)
     # landing — с сайта (публичная запись); crm — создано в CRM; NULL — старые данные
     source = Column(String(32), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     client = relationship("Client", backref="appointments")
 

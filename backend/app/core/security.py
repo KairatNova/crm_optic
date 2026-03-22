@@ -34,6 +34,25 @@ def normalize_username(value: str | None) -> str | None:
     return v or None
 
 
+def digits_only_phone(value: str | None) -> str:
+    if not value:
+        return ""
+    return "".join(ch for ch in value if ch.isdigit())
+
+
+def phones_equivalent(a: str | None, b: str | None) -> bool:
+    """Сравнение телефонов для поиска дублей: цифры и/или нормализация KG."""
+    if not a or not b:
+        return False
+    da = digits_only_phone(a)
+    db = digits_only_phone(b)
+    if da and db and da == db:
+        return True
+    na = normalize_phone_kg(a)
+    nb = normalize_phone_kg(b)
+    return bool(na and nb and na == nb)
+
+
 def normalize_phone_kg(value: str | None) -> str | None:
     if value is None:
         return None

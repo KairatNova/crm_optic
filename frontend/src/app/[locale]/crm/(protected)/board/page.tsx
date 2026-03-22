@@ -14,10 +14,14 @@ import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
 import {
   BOARD_SERVICE_FILTER_OPTIONS,
+  CRM_CANCELLATION_REASONS,
+  isAppointmentOverdue,
+  isPredefinedCancellationReason,
   matchesBoardServiceFilter,
   type BoardServiceFilter,
 } from "@/lib/crm-appointment-filters";
@@ -103,12 +107,8 @@ const KANBAN_COLUMNS: { id: AppointmentStatus; title: string; theme: ColumnTheme
 
 const COLUMN_IDS = new Set<string>(KANBAN_COLUMNS.map((c) => c.id));
 
-function todayLocalDate(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+function sortByStartsAtAsc(rows: AppointmentRow[]): AppointmentRow[] {
+  return [...rows].sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 }
 
 function recordsCountLabel(n: number): string {
@@ -173,49 +173,100 @@ function KanbanColumn({
   );
 }
 
-function AppointmentCard({ row, locale }: { row: AppointmentRow; locale: string }) {
+function AppointmentCard({
+  row,
+  locale,
+  onOpen,
+}: {
+  row: AppointmentRow;
+  locale: string;
+  onOpen: (row: AppointmentRow) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `appt-${row.id}`,
   });
   const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
   const raw = row.status || "new";
   const unknown = raw !== "new" && !COLUMN_IDS.has(raw);
+  const overdue = isAppointmentOverdue(row);
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
       className={[
         "rounded-xl border border-slate-200/90 bg-white/95 p-3 text-sm shadow-sm backdrop-blur-sm",
-        "cursor-grab touch-none active:cursor-grabbing",
         isDragging ? "opacity-60" : "",
+        overdue ? "border-amber-400/90 bg-amber-50/40 ring-1 ring-amber-200/80" : "",
       ].join(" ")}
     >
-      <div className="font-semibold text-slate-900">
-        <Link href={`/${locale}/crm/clients/${row.client_id}`} className="text-teal-700 hover:underline" onClick={(e) => e.stopPropagation()}>
-          {row.client_name || `Клиент #${row.client_id}`}
-        </Link>
-      </div>
-      <div className="mt-0.5 text-xs text-slate-500">{row.client_phone || "—"}</div>
-      <div className="mt-1 text-xs text-slate-600">{row.service || "—"}</div>
-      <div className="mt-1 text-xs text-slate-500">{new Date(row.starts_at).toLocaleString("ru-RU")}</div>
-      {row.source === "landing" ? (
-        <div className="mt-1 text-[10px] font-semibold text-indigo-700">Лендинг</div>
-      ) : null}
-      {unknown ? (
-        <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-amber-800">Неизвестный статус в БД: {raw}</div>
-      ) : null}
-      <div className="mt-2 border-t border-slate-100 pt-2">
-        <Link
-          href={`/${locale}/crm/appointments/${row.id}`}
-          className="text-xs font-semibold text-teal-700 hover:underline"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="mt-0.5 shrink-0 cursor-grab touch-none rounded-lg border border-slate-200 bg-slate-50 px-1.5 py-2 text-slate-500 hover:bg-slate-100 active:cursor-grabbing"
+          aria-label="Перетащить карточку"
+          {...listeners}
+          {...attributes}
         >
-          Открыть запись →
-        </Link>
+          <span className="flex flex-col gap-0.5 leading-none" aria-hidden>
+            <span className="h-0.5 w-3 rounded bg-slate-400" />
+            <span className="h-0.5 w-3 rounded bg-slate-400" />
+            <span className="h-0.5 w-3 rounded bg-slate-400" />
+          </span>
+        </button>
+        <div className="min-w-0 flex-1">
+          <div
+            role="button"
+            tabIndex={0}
+            className="cursor-pointer rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            onClick={() => onOpen(row)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpen(row);
+              }
+            }}
+          >
+            <div className="font-semibold text-slate-900">
+              <span className="text-teal-700">
+                {row.client_name || `Клиент #${row.client_id}`}
+              </span>
+            </div>
+            <div className="mt-0.5 text-xs text-slate-500">{row.client_phone || "—"}</div>
+            <div className="mt-1 text-xs text-slate-600">{row.service || "—"}</div>
+            <div className="mt-1 text-xs text-slate-500">{new Date(row.starts_at).toLocaleString("ru-RU")}</div>
+            {overdue ? (
+              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">Просрочено</div>
+            ) : null}
+            {row.source === "landing" ? (
+              <div className="mt-1 text-[10px] font-semibold text-indigo-700">Лендинг</div>
+            ) : null}
+            {unknown ? (
+              <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-amber-800">
+                Неизвестный статус в БД: {raw}
+              </div>
+            ) : null}
+          </div>
+          <div className="mt-2 border-t border-slate-100 pt-2">
+            <Link
+              href={`/${locale}/crm/clients/${row.client_id}`}
+              className="text-xs font-semibold text-teal-700 hover:underline"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Клиент →
+            </Link>
+            <span className="mx-2 text-slate-300">·</span>
+            <Link
+              href={`/${locale}/crm/appointments/${row.id}`}
+              className="text-xs font-semibold text-teal-700 hover:underline"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Запись →
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -236,6 +287,13 @@ export default function CrmBoardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [serviceFilter, setServiceFilter] = useState<BoardServiceFilter>("all");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [selectedRow, setSelectedRow] = useState<AppointmentRow | null>(null);
+  const [panelStatus, setPanelStatus] = useState<AppointmentStatus>("new");
+  const [panelReasonCode, setPanelReasonCode] = useState("client_request");
+  const [panelReasonOther, setPanelReasonOther] = useState("");
+  const [panelSaving, setPanelSaving] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -243,8 +301,9 @@ export default function CrmBoardPage() {
     }),
   );
 
-  const loadAppointments = useCallback(async () => {
-    setLoading(true);
+  const loadAppointments = useCallback(async (opts?: { soft?: boolean }) => {
+    if (opts?.soft) setRefreshing(true);
+    else setLoading(true);
     setError(null);
     try {
       const appts = await getAppointments(token);
@@ -271,14 +330,45 @@ export default function CrmBoardPage() {
       setAppointments(rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки");
+      toast.error(e instanceof Error ? e.message : "Ошибка загрузки");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [token]);
+
+  const refresh = useCallback(async () => {
+    await loadAppointments({ soft: true });
+  }, [loadAppointments]);
 
   useEffect(() => {
     void loadAppointments();
   }, [loadAppointments]);
+
+  useEffect(() => {
+    if (!selectedRow) return;
+    setPanelStatus(boardColumnForStatus(selectedRow.status));
+    const cr = selectedRow.cancellation_reason;
+    if (cr && isPredefinedCancellationReason(cr)) {
+      setPanelReasonCode(cr);
+      setPanelReasonOther("");
+    } else if (cr) {
+      setPanelReasonCode("other");
+      setPanelReasonOther(cr);
+    } else {
+      setPanelReasonCode("client_request");
+      setPanelReasonOther("");
+    }
+  }, [selectedRow]);
+
+  useEffect(() => {
+    if (!selectedRow) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelectedRow(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedRow]);
 
   const filteredRows = useMemo(() => {
     let rows = appointments;
@@ -329,6 +419,9 @@ export default function CrmBoardPage() {
       const col = boardColumnForStatus(a.status);
       map.get(col)!.push(a);
     }
+    for (const col of KANBAN_COLUMNS) {
+      map.set(col.id, sortByStartsAtAsc(map.get(col.id)!));
+    }
     return map;
   }, [filteredRows]);
 
@@ -350,23 +443,73 @@ export default function CrmBoardPage() {
     setAppointments((prev) => prev.map((r) => (r.id === apptId ? { ...r, status: targetCol } : r)));
     setError(null);
     try {
-      const updated = await patchAppointment(token, apptId, { status: targetCol });
+      const patch: Parameters<typeof patchAppointment>[2] = { status: targetCol };
+      if (targetCol === "cancelled") {
+        patch.cancellation_reason = "client_request";
+      }
+      const updated = await patchAppointment(token, apptId, patch);
       setAppointments((prev) =>
         prev.map((r) => (r.id === apptId ? { ...r, ...updated, client_name: r.client_name, client_phone: r.client_phone } : r)),
       );
+      toast.success("Статус обновлён");
     } catch (e) {
       setAppointments(previous);
-      setError(e instanceof Error ? e.message : "Не удалось изменить статус");
+      const msg = e instanceof Error ? e.message : "Не удалось изменить статус";
+      setError(msg);
+      toast.error(msg);
+    }
+  }
+
+  async function applyPanelStatus() {
+    if (!selectedRow) return;
+    setPanelSaving(true);
+    setError(null);
+    try {
+      const body: Parameters<typeof patchAppointment>[2] = { status: panelStatus };
+      if (panelStatus === "cancelled") {
+        body.cancellation_reason =
+          panelReasonCode === "other" ? panelReasonOther.trim() || null : panelReasonCode;
+      }
+      const updated = await patchAppointment(token, selectedRow.id, body);
+      setAppointments((prev) =>
+        prev.map((r) =>
+          r.id === selectedRow.id ? { ...r, ...updated, client_name: r.client_name, client_phone: r.client_phone } : r,
+        ),
+      );
+      setSelectedRow((cur) =>
+        cur && cur.id === selectedRow.id
+          ? { ...cur, ...updated, client_name: cur.client_name, client_phone: cur.client_phone }
+          : cur,
+      );
+      toast.success("Статус сохранён");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось сохранить";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setPanelSaving(false);
     }
   }
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <h1 className="text-xl font-bold">Доска</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Записи по статусам. Перетащите карточку в другую колонку, чтобы изменить статус.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold">Доска</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Записи по статусам. Перетащите карточку за ручку слева; клик по карточке открывает панель.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={loading || refreshing}
+            onClick={() => void refresh()}
+            className="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
+          >
+            {refreshing ? "Обновление…" : "Обновить"}
+          </button>
+        </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-2">
@@ -449,7 +592,7 @@ export default function CrmBoardPage() {
               return (
                 <KanbanColumn key={col.id} columnId={col.id} title={col.title} count={items.length} theme={col.theme}>
                   {items.map((row) => (
-                    <AppointmentCard key={row.id} row={row} locale={locale} />
+                    <AppointmentCard key={row.id} row={row} locale={locale} onOpen={setSelectedRow} />
                   ))}
                 </KanbanColumn>
               );
@@ -457,6 +600,113 @@ export default function CrmBoardPage() {
           </div>
         </DndContext>
       )}
+
+      {selectedRow ? (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-900/40"
+            aria-label="Закрыть панель"
+            onClick={() => setSelectedRow(null)}
+          />
+          <aside className="relative z-50 flex h-full w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Запись</div>
+                <div className="text-lg font-bold text-slate-900">№{selectedRow.id}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRow(null)}
+                className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                Закрыть
+              </button>
+            </div>
+            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+              <div>
+                <div className="text-xs font-medium text-slate-500">Клиент</div>
+                <Link
+                  href={`/${locale}/crm/clients/${selectedRow.client_id}`}
+                  className="mt-0.5 font-semibold text-teal-700 hover:underline"
+                >
+                  {selectedRow.client_name || `Клиент #${selectedRow.client_id}`}
+                </Link>
+                <div className="text-slate-600">{selectedRow.client_phone || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-slate-500">Услуга</div>
+                <div className="text-slate-900">{selectedRow.service || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-slate-500">Время</div>
+                <div className="text-slate-900">{new Date(selectedRow.starts_at).toLocaleString("ru-RU")}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-slate-500">Комментарий</div>
+                <div className="whitespace-pre-wrap text-slate-800">{selectedRow.comment?.trim() ? selectedRow.comment : "—"}</div>
+              </div>
+              <label className="grid gap-1">
+                <span className="text-xs font-medium text-slate-600">Статус</span>
+                <select
+                  value={panelStatus}
+                  onChange={(e) => setPanelStatus(e.target.value as AppointmentStatus)}
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+                >
+                  {KANBAN_COLUMNS.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {panelStatus === "cancelled" ? (
+                <div className="space-y-2">
+                  <label className="grid gap-1">
+                    <span className="text-xs font-medium text-slate-600">Причина отмены</span>
+                    <select
+                      value={panelReasonCode}
+                      onChange={(e) => setPanelReasonCode(e.target.value)}
+                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+                    >
+                      {CRM_CANCELLATION_REASONS.map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {panelReasonCode === "other" ? (
+                    <textarea
+                      value={panelReasonOther}
+                      onChange={(e) => setPanelReasonOther(e.target.value)}
+                      rows={2}
+                      placeholder="Уточните причину…"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={panelSaving}
+                  onClick={() => void applyPanelStatus()}
+                  className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+                >
+                  {panelSaving ? "Сохранение…" : "Сохранить статус"}
+                </button>
+                <Link
+                  href={`/${locale}/crm/appointments/${selectedRow.id}`}
+                  className="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                >
+                  Полная карточка
+                </Link>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
