@@ -4,7 +4,16 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import type { AppointmentRead, ClientRead } from "@/lib/crm-api";
+import {
+  APPOINTMENT_STATUSES,
+  APPOINTMENT_STATUS_LABELS,
+  BOARD_SERVICE_FILTER_OPTIONS,
+  appointmentStatusBadgeClass,
+  isKnownAppointmentStatus,
+  matchesBoardServiceFilter,
+  type BoardServiceFilter,
+} from "@/lib/crm-appointment-filters";
+import type { AppointmentRead, AppointmentStatus, ClientRead } from "@/lib/crm-api";
 import { getAppointments, getClient, patchAppointment } from "@/lib/crm-api";
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
 
@@ -13,6 +22,16 @@ type AppointmentRow = AppointmentRead & {
   client_phone?: string;
 };
 
+function todayLocalDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+type ApiStatusFilter = "all" | AppointmentStatus;
+
 export default function CrmAppointmentsPage() {
   const { token } = useCrmSession();
   const params = useParams<{ locale: string }>();
@@ -20,9 +39,13 @@ export default function CrmAppointmentsPage() {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  const [apiStatusFilter, setApiStatusFilter] = useState<ApiStatusFilter>("new");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>(() => todayLocalDate());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [serviceFilter, setServiceFilter] = useState<BoardServiceFilter>("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -31,7 +54,7 @@ export default function CrmAppointmentsPage() {
       setLoading(true);
       setError(null);
       try {
-        const appts = await getAppointments(token, statusFilter === "all" ? undefined : statusFilter);
+        const appts = await getAppointments(token, apiStatusFilter === "all" ? undefined : apiStatusFilter);
         const uniqClientIds = Array.from(new Set(appts.map((a) => a.client_id)));
         const clientsPairs = await Promise.all(
           uniqClientIds.map(async (id) => {
@@ -66,48 +89,141 @@ export default function CrmAppointmentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [statusFilter, token]);
+  }, [apiStatusFilter, token]);
 
-  const filteredByDate = useMemo(() => {
-    return appointments.filter((a) => {
+  const filteredRows = useMemo(() => {
+    let rows = appointments;
+
+    rows = rows.filter((a) => {
       const day = new Date(a.starts_at).toISOString().slice(0, 10);
       if (fromDate && day < fromDate) return false;
       if (toDate && day > toDate) return false;
       return true;
     });
-  }, [appointments, fromDate, toDate]);
 
-  async function toggleStatus(row: AppointmentRow) {
-    const next = row.status === "done" ? "new" : "done";
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const qDigits = q.replace(/[^\d+]/g, "");
+      rows = rows.filter((a) => {
+        const name = (a.client_name || "").toLowerCase();
+        const phone = (a.client_phone || "").toLowerCase();
+        const phoneDigits = phone.replace(/[^\d+]/g, "").replace(/\+/g, "");
+        const service = (a.service || "").toLowerCase();
+        const comment = (a.comment || "").toLowerCase();
+        return (
+          name.includes(q) ||
+          phone.includes(q) ||
+          (qDigits && phoneDigits.includes(qDigits.replace(/\+/g, ""))) ||
+          service.includes(q) ||
+          comment.includes(q)
+        );
+      });
+    }
+
+    if (serviceFilter !== "all") {
+      rows = rows.filter((a) => matchesBoardServiceFilter(a.service, serviceFilter));
+    }
+
+    return rows;
+  }, [appointments, fromDate, toDate, searchQuery, serviceFilter]);
+
+  async function setAppointmentStatus(row: AppointmentRow, next: AppointmentStatus) {
+    const current = row.status || "new";
+    if (current === next) return;
+    setUpdatingId(row.id);
+    setError(null);
+    const previous = appointments;
+    setAppointments((prev) => prev.map((x) => (x.id === row.id ? { ...x, status: next } : x)));
     try {
       const updated = await patchAppointment(token, row.id, { status: next });
-      setAppointments((prev) => prev.map((x) => (x.id === row.id ? { ...x, ...updated } : x)));
+      setAppointments((prev) =>
+        prev.map((x) =>
+          x.id === row.id ? { ...x, ...updated, client_name: x.client_name, client_phone: x.client_phone } : x,
+        ),
+      );
     } catch (e) {
+      setAppointments(previous);
       setError(e instanceof Error ? e.message : "Не удалось обновить статус");
+    } finally {
+      setUpdatingId(null);
     }
+  }
+
+  function statusSelectValue(row: AppointmentRow): string {
+    const s = row.status || "new";
+    return isKnownAppointmentStatus(s) ? s : s;
+  }
+
+  function statusBadgeText(row: AppointmentRow): string {
+    const s = row.status || "new";
+    if (isKnownAppointmentStatus(s)) return APPOINTMENT_STATUS_LABELS[s];
+    return s;
   }
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <h1 className="text-xl font-bold">Записи</h1>
-        <p className="mt-1 text-sm text-slate-600">Список записей из CRM, фильтр по статусу и периоду.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Записи</h1>
+            <p className="mt-1 text-sm text-slate-600">Список записей, фильтры и смена статуса (как на доске).</p>
+          </div>
+          <Link
+            href={`/${locale}/crm/board`}
+            className="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Открыть доску
+          </Link>
+        </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-2">
+            <span className="text-xs font-medium text-slate-600">Поиск</span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Имя, телефон, услуга, комментарий…"
+              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+            />
+          </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Статус</span>
+            <span className="text-xs font-medium text-slate-600">Статус (загрузка с сервера)</span>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={apiStatusFilter}
+              onChange={(e) => setApiStatusFilter(e.target.value as ApiStatusFilter)}
               className="h-10 rounded-xl border border-slate-300 bg-white px-3"
             >
-              <option value="all">все</option>
-              <option value="new">новые</option>
-              <option value="done">выполненные</option>
+              <option value="all">Все статусы</option>
+              {APPOINTMENT_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {APPOINTMENT_STATUS_LABELS[s]}
+                </option>
+              ))}
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Дата от</span>
+            <span className="text-xs font-medium text-slate-600">Услуга</span>
+            <select
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value as BoardServiceFilter)}
+              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+            >
+              {BOARD_SERVICE_FILTER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="text-xs text-slate-500 sm:col-span-2 lg:col-span-2 lg:self-end">
+            В таблице: <span className="font-semibold text-slate-700">{filteredRows.length}</span> из загруженных{" "}
+            {appointments.length}
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm">
+            <span className="text-xs font-medium text-slate-600">Дата от (необязательно)</span>
             <input
               type="date"
               value={fromDate}
@@ -116,7 +232,7 @@ export default function CrmAppointmentsPage() {
             />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Дата до</span>
+            <span className="text-xs font-medium text-slate-600">Дата до (по умолчанию — сегодня)</span>
             <input
               type="date"
               value={toDate}
@@ -125,6 +241,9 @@ export default function CrmAppointmentsPage() {
             />
           </label>
         </div>
+        <p className="mt-2 text-xs text-slate-500">
+          «Дата от» можно не заполнять. «Дата до» изначально сегодня; очистите поле, чтобы не ограничивать период сверху.
+        </p>
       </div>
 
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
@@ -137,25 +256,26 @@ export default function CrmAppointmentsPage() {
               <th className="px-4 py-3">Телефон</th>
               <th className="px-4 py-3">Услуга</th>
               <th className="px-4 py-3">Дата/время</th>
+              <th className="px-4 py-3">Комментарий</th>
               <th className="px-4 py-3">Статус</th>
-              <th className="px-4 py-3">Действие</th>
+              <th className="px-4 py-3 min-w-[11rem]">Изменить статус</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-4 text-slate-500" colSpan={6}>
+                <td className="px-4 py-4 text-slate-500" colSpan={7}>
                   Загрузка...
                 </td>
               </tr>
-            ) : filteredByDate.length === 0 ? (
+            ) : filteredRows.length === 0 ? (
               <tr>
-                <td className="px-4 py-4 text-slate-500" colSpan={6}>
+                <td className="px-4 py-4 text-slate-500" colSpan={7}>
                   Записей пока нет
                 </td>
               </tr>
             ) : (
-              filteredByDate.map((row) => (
+              filteredRows.map((row) => (
                 <tr key={row.id} className="border-t border-slate-100">
                   <td className="px-4 py-3 font-medium">
                     <Link href={`/${locale}/crm/clients/${row.client_id}`} className="text-teal-700 hover:underline">
@@ -164,25 +284,38 @@ export default function CrmAppointmentsPage() {
                   </td>
                   <td className="px-4 py-3">{row.client_phone || "—"}</td>
                   <td className="px-4 py-3">{row.service || "—"}</td>
-                  <td className="px-4 py-3">{new Date(row.starts_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{new Date(row.starts_at).toLocaleString("ru-RU")}</td>
+                  <td className="max-w-[200px] px-4 py-3 text-xs text-slate-600">
+                    <span className="line-clamp-2" title={row.comment || undefined}>
+                      {row.comment?.trim() ? row.comment : "—"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={[
                         "inline-flex rounded-full px-2 py-1 text-xs font-semibold",
-                        row.status === "done" ? "bg-emerald-100 text-emerald-700" : "bg-sky-100 text-sky-700",
+                        appointmentStatusBadgeClass(row.status),
                       ].join(" ")}
                     >
-                      {row.status || "new"}
+                      {statusBadgeText(row)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => void toggleStatus(row)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    <select
+                      value={statusSelectValue(row)}
+                      disabled={updatingId === row.id}
+                      onChange={(e) => void setAppointmentStatus(row, e.target.value as AppointmentStatus)}
+                      className="h-9 w-full max-w-[11rem] rounded-lg border border-slate-300 bg-white px-2 text-xs font-medium disabled:opacity-50"
                     >
-                      {row.status === "done" ? "Вернуть в new" : "Отметить done"}
-                    </button>
+                      {!isKnownAppointmentStatus(row.status) && row.status ? (
+                        <option value={row.status}>{row.status} (в БД)</option>
+                      ) : null}
+                      {APPOINTMENT_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {APPOINTMENT_STATUS_LABELS[s]}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                 </tr>
               ))
@@ -193,4 +326,3 @@ export default function CrmAppointmentsPage() {
     </div>
   );
 }
-

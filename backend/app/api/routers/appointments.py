@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.core.appointment_status import ALLOWED_APPOINTMENT_STATUSES
 from app.models.appointment import Appointment
 from app.models.client import Client
 from app.schemas.appointment import AppointmentCreate, AppointmentPatch, AppointmentRead
@@ -28,11 +29,18 @@ async def create_appointment(payload: AppointmentCreate, db: AsyncSession = Depe
     if client is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="client_id is invalid")
 
+    effective_status = payload.status or "new"
+    if effective_status not in ALLOWED_APPOINTMENT_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid appointment status: {effective_status!r}",
+        )
+
     appt = Appointment(
         client_id=payload.client_id,
         service=payload.service,
         starts_at=starts_at,
-        status=(payload.status or "new"),
+        status=effective_status,
         comment=payload.comment,
     )
     db.add(appt)
@@ -70,6 +78,11 @@ async def patch_appointment(
     if payload.starts_at is not None:
         appt.starts_at = payload.starts_at
     if payload.status is not None:
+        if payload.status not in ALLOWED_APPOINTMENT_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid appointment status: {payload.status!r}",
+            )
         appt.status = payload.status
     if payload.comment is not None:
         appt.comment = payload.comment

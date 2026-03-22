@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
-import type { ClientRead } from "@/lib/crm-api";
-import { createClient, getClients } from "@/lib/crm-api";
+import type { ClientRead, OwnerExportVariant } from "@/lib/crm-api";
+import { createClient, downloadOwnerExportExcel, getClients } from "@/lib/crm-api";
 
 type SearchMode = "all" | "name" | "phone" | "email";
+const PAGE_SIZE = 15;
 
 function normalizeQuery(q: string): string {
   return q.trim().toLowerCase();
@@ -19,7 +20,7 @@ function normalizePhoneForSearch(q: string): string {
 }
 
 export default function ClientsPage() {
-  const { token } = useCrmSession();
+  const { token, user } = useCrmSession();
   const params = useParams<{ locale: string }>();
   const locale = params.locale || "ru";
 
@@ -36,6 +37,12 @@ export default function ClientsPage() {
   const [createGender, setCreateGender] = useState("");
   const [createBirthDate, setCreateBirthDate] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [listVisible, setListVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [exportBusy, setExportBusy] = useState<OwnerExportVariant | null>(null);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const loadClients = useCallback(async () => {
     setLoading(true);
@@ -53,6 +60,17 @@ export default function ClientsPage() {
   useEffect(() => {
     void loadClients();
   }, [loadClients]);
+
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [exportMenuOpen]);
 
   const filtered = useMemo(() => {
     const q = normalizeQuery(query);
@@ -74,6 +92,22 @@ export default function ClientsPage() {
       return name.includes(q) || email.includes(q) || phoneDigits.includes(qDigits) || phone.includes(q);
     });
   }, [clients, mode, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filtered]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, mode, clients]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   async function onCreateClient() {
     setCreateLoading(true);
@@ -97,6 +131,7 @@ export default function ClientsPage() {
       setCreateEmail("");
       setCreateGender("");
       setCreateBirthDate("");
+      setCreateFormOpen(false);
       await loadClients();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось создать клиента");
@@ -105,11 +140,59 @@ export default function ClientsPage() {
     }
   }
 
+  async function onExport(variant: OwnerExportVariant) {
+    setExportBusy(variant);
+    setError(null);
+    try {
+      await downloadOwnerExportExcel(token, variant);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось скачать экспорт");
+    } finally {
+      setExportBusy(null);
+    }
+    setExportMenuOpen(false);
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h1 className="text-xl font-bold">Клиенты</h1>
-        <p className="mt-1 text-sm text-slate-600">Список клиентов и поиск по имени/телефону/email.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Клиенты</h1>
+            <p className="mt-1 text-sm text-slate-600">Список клиентов и поиск по имени/телефону/email.</p>
+          </div>
+          {user.role === "owner" ? (
+            <div ref={exportMenuRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setExportMenuOpen((o) => !o)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+              >
+                Экспорт
+              </button>
+              {exportMenuOpen ? (
+                <div className="absolute right-0 z-20 mt-1 w-[min(100vw-2rem,22rem)] rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                  <button
+                    type="button"
+                    disabled={exportBusy !== null}
+                    onClick={() => void onExport("clients_latest_vision")}
+                    className="block w-full px-4 py-2.5 text-left text-sm text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {exportBusy === "clients_latest_vision" ? "Готовим файл…" : "Клиенты + последние записи зрения"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={exportBusy !== null}
+                    onClick={() => void onExport("clients_all_vision")}
+                    className="block w-full px-4 py-2.5 text-left text-sm text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {exportBusy === "clients_all_vision" ? "Готовим файл…" : "Клиенты + все записи зрения"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-sm sm:col-span-2">
@@ -132,95 +215,159 @@ export default function ClientsPage() {
           </label>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-sm font-semibold text-slate-800">Добавить клиента</div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm">
-              <span className="text-xs font-medium text-slate-600">Имя *</span>
-              <input
-                value={createName}
-                onChange={(e) => setCreateName(e.target.value)}
-                className="h-10 rounded-xl border border-slate-300 px-3"
-                placeholder="Иван Иванов"
-              />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-xs font-medium text-slate-600">Телефон *</span>
-              <input
-                value={createPhone}
-                onChange={(e) => setCreatePhone(e.target.value)}
-                className="h-10 rounded-xl border border-slate-300 px-3"
-                placeholder="+996700123456"
-              />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-xs font-medium text-slate-600">Email</span>
-              <input value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3" placeholder="admin@example.com" />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-xs font-medium text-slate-600">Пол</span>
-              <input value={createGender} onChange={(e) => setCreateGender(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3" placeholder="M/F" />
-            </label>
-            <label className="grid gap-1 text-sm sm:col-span-2">
-              <span className="text-xs font-medium text-slate-600">Дата рождения</span>
-              <input type="date" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3" />
-            </label>
-          </div>
+        <div className="mt-4">
           <button
             type="button"
-            onClick={() => void onCreateClient()}
-            disabled={createLoading}
-            className="mt-4 w-full rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
+            onClick={() => setCreateFormOpen((v) => !v)}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
           >
-            {createLoading ? "Создаём..." : "Добавить клиента"}
+            {createFormOpen ? "Скрыть форму добавления" : "Добавить клиента"}
           </button>
         </div>
+
+        {createFormOpen ? (
+          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="grid gap-1 text-sm">
+                <span className="text-xs font-medium text-slate-600">Имя *</span>
+                <input
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  className="h-9 rounded-xl border border-slate-300 px-3"
+                  placeholder="Иван Иванов"
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span className="text-xs font-medium text-slate-600">Телефон *</span>
+                <input
+                  value={createPhone}
+                  onChange={(e) => setCreatePhone(e.target.value)}
+                  className="h-9 rounded-xl border border-slate-300 px-3"
+                  placeholder="+996700123456"
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span className="text-xs font-medium text-slate-600">Email</span>
+                <input
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  className="h-9 rounded-xl border border-slate-300 px-3"
+                  placeholder="admin@example.com"
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span className="text-xs font-medium text-slate-600">Пол</span>
+                <input value={createGender} onChange={(e) => setCreateGender(e.target.value)} className="h-9 rounded-xl border border-slate-300 px-3" placeholder="M/F" />
+              </label>
+              <label className="grid gap-1 text-sm sm:col-span-2">
+                <span className="text-xs font-medium text-slate-600">Дата рождения</span>
+                <input type="date" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} className="h-9 rounded-xl border border-slate-300 px-3" />
+              </label>
+            </div>
+            <button
+              type="button"
+              onClick={() => void onCreateClient()}
+              disabled={createLoading}
+              className="mt-3 w-full rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
+            >
+              {createLoading ? "Создаём..." : "Сохранить клиента"}
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Клиент</th>
-              <th className="px-4 py-3">Телефон</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Дата рождения</th>
-              <th className="px-4 py-3">Открыть</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-4 text-slate-500">
-                  Загрузка...
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-4 text-slate-500">
-                  Клиентов не найдено
-                </td>
-              </tr>
-            ) : (
-              filtered.map((c) => (
-                <tr key={c.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium">{c.name || "—"}</td>
-                  <td className="px-4 py-3">{c.phone}</td>
-                  <td className="px-4 py-3">{c.email || "—"}</td>
-                  <td className="px-4 py-3">{c.birth_date ? new Date(c.birth_date).toLocaleDateString() : "—"}</td>
-                  <td className="px-4 py-3">
-                    <a href={`/${locale}/crm/clients/${c.id}`} className="text-teal-700 hover:underline">
-                      Открыть
-                    </a>
-                  </td>
+      {!listVisible ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setListVisible(true)}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Показать список клиентов
+          </button>
+          <p className="mt-2 text-xs text-slate-600">Найдено: {filtered.length}. На странице отображается до {PAGE_SIZE} клиентов.</p>
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+            <div className="text-sm text-slate-600">
+              {loading ? "Загрузка..." : `Показано ${paginated.length} из ${filtered.length}`}
+            </div>
+            <button
+              type="button"
+              onClick={() => setListVisible(false)}
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Скрыть список
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Клиент</th>
+                  <th className="px-4 py-3">Телефон</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Дата рождения</th>
+                  <th className="px-4 py-3">Открыть</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-4 text-slate-500">
+                      Загрузка...
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-4 text-slate-500">
+                      Клиентов не найдено
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((c) => (
+                    <tr key={c.id} className="border-t border-slate-100">
+                      <td className="px-4 py-3 font-medium">{c.name || "—"}</td>
+                      <td className="px-4 py-3">{c.phone}</td>
+                      <td className="px-4 py-3">{c.email || "—"}</td>
+                      <td className="px-4 py-3">{c.birth_date ? new Date(c.birth_date).toLocaleDateString() : "—"}</td>
+                      <td className="px-4 py-3">
+                        <a href={`/${locale}/crm/clients/${c.id}`} className="text-teal-700 hover:underline">
+                          Открыть
+                        </a>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1 || loading || filtered.length === 0}
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              Назад
+            </button>
+            <div className="text-sm text-slate-600">
+              Страница {Math.min(currentPage, totalPages)} из {totalPages}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages || loading || filtered.length === 0}
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              Вперёд
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,8 @@ import {
   type VisionTestRead,
 } from "@/lib/crm-api";
 
+type ActiveSection = "visits" | "vision";
+
 export default function ClientCardPage() {
   const { token } = useCrmSession();
   const params = useParams<{ id: string }>();
@@ -72,6 +74,7 @@ export default function ClientCardPage() {
   const [editLensType, setEditLensType] = useState("");
   const [editFrameModel, setEditFrameModel] = useState("");
   const [editVisionTestComment, setEditVisionTestComment] = useState("");
+  const [activeSection, setActiveSection] = useState<ActiveSection>("visits");
 
   function toDatetimeLocalValue(iso: string): string {
     const d = new Date(iso);
@@ -528,6 +531,32 @@ export default function ClientCardPage() {
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveSection("visits")}
+            className={[
+              "rounded-xl px-4 py-2 text-sm font-semibold",
+              activeSection === "visits" ? "bg-teal-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            Визиты
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("vision")}
+            className={[
+              "rounded-xl px-4 py-2 text-sm font-semibold",
+              activeSection === "vision" ? "bg-teal-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            Тесты зрения
+          </button>
+        </div>
+      </div>
+
+      {activeSection === "visits" ? (
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <h2 className="text-base font-semibold text-slate-800">Визиты</h2>
@@ -627,7 +656,9 @@ export default function ClientCardPage() {
           </div>
         </div>
       </div>
+      ) : null}
 
+      {activeSection === "vision" ? (
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -918,6 +949,7 @@ export default function ClientCardPage() {
             </div>
           </div>
       </div>
+      ) : null}
     </div>
   );
 }

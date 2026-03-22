@@ -8,6 +8,7 @@ psycopg[binary]>=3.1
 alembic>=1.13
 PyJWT>=2.8
 bcrypt>=4.1
+openpyxl>=3.1
 
 # test/dev dependencies
 pytest>=8.0

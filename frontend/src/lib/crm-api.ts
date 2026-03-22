@@ -25,6 +25,9 @@ export type LoginRequestOut = {
   message: string;
 };
 
+/** Канонические статусы записи (Kanban / PATCH). Другие строки возможны у старых данных. */
+export type AppointmentStatus = "new" | "confirmed" | "in_progress" | "done" | "cancelled";
+
 export type AppointmentRead = {
   id: number;
   client_id: number;
@@ -151,7 +154,7 @@ export async function getAppointments(token: string, statusFilter?: string): Pro
 export async function patchAppointment(
   token: string,
   appointmentId: number,
-  payload: { status?: string; comment?: string; service?: string; starts_at?: string },
+  payload: { status?: AppointmentStatus | string; comment?: string; service?: string; starts_at?: string },
 ): Promise<AppointmentRead> {
   return request<AppointmentRead>(`/appointments/${appointmentId}`, {
     method: "PATCH",
@@ -385,4 +388,45 @@ export async function patchOwnerAdmin(
     headers: withAuth(token),
     body: JSON.stringify(payload),
   });
+}
+
+export type OwnerExportVariant = "clients_latest_vision" | "clients_all_vision";
+
+/** Скачать .xlsx (только для owner; иначе API вернёт 403). */
+export async function downloadOwnerExportExcel(token: string, variant: OwnerExportVariant): Promise<void> {
+  const path =
+    variant === "clients_all_vision"
+      ? "/owner/export/clients-all-vision.xlsx"
+      : "/owner/export/clients-latest-vision.xlsx";
+  const response = await fetch(apiUrl(path), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const payload = await parseJsonOrText<{ detail?: string | unknown }>(response);
+    const detail = payload.detail;
+    const msg =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? JSON.stringify(detail)
+          : detail && typeof detail === "object"
+            ? JSON.stringify(detail)
+            : `HTTP ${response.status}`;
+    const err = new Error(msg) as ApiError;
+    err.status = response.status;
+    throw err;
+  }
+  const blob = await response.blob();
+  const cd = response.headers.get("Content-Disposition");
+  let filename = variant === "clients_all_vision" ? "clients_all_vision.xlsx" : "clients_latest_vision.xlsx";
+  const m = cd?.match(/filename="([^"]+)"/);
+  if (m?.[1]) filename = m[1];
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

@@ -50,3 +50,30 @@ async def test_create_list_and_patch_appointments(api_client, auth_headers):
     patched = res_patch.json()
     assert patched["status"] == "done"
 
+    res_patch2 = await api_client.patch(
+        f"/appointments/{appt['id']}",
+        json={"status": "in_progress"},
+        headers=auth_headers,
+    )
+    assert res_patch2.status_code == 200, res_patch2.text
+    assert res_patch2.json()["status"] == "in_progress"
+
+    res_bad = await api_client.patch(
+        f"/appointments/{appt['id']}",
+        json={"status": "invalid_status"},
+        headers=auth_headers,
+    )
+    assert res_bad.status_code == 400
+
+    res_create_bad = await api_client.post(
+        "/appointments",
+        json={
+            "client_id": created_client["id"],
+            "service": "X",
+            "starts_at": future_iso(3),
+            "status": "not_a_status",
+        },
+        headers=auth_headers,
+    )
+    assert res_create_bad.status_code == 400
+
