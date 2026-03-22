@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.client import ClientRead
+
 
 class AppointmentBase(BaseModel):
     client_id: int
@@ -26,4 +28,11 @@ class AppointmentRead(AppointmentBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
+    source: str | None = None
+
+
+class AppointmentDetailRead(AppointmentRead):
+    """Запись с вложенным профилем клиента (карточка записи в CRM)."""
+
+    client: ClientRead
 

@@ -39,6 +39,7 @@ async def public_booking(payload: PublicBookingCreate, db: AsyncSession = Depend
         starts_at=starts_at,
         status="new",
         comment=payload.comment,
+        source="landing",
     )
     db.add(appt)
     await db.commit()

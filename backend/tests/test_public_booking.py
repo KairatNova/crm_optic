@@ -27,6 +27,7 @@ async def test_public_booking_creates_appointment_and_client(api_client, auth_he
     assert appt["status"] == "new"
     assert appt["service"] == payload["service"]
     assert appt["client_id"] > 0
+    assert appt.get("source") == "landing"
 
     # Appointment should be visible in protected CRM endpoints.
     res_list = await api_client.get("/appointments", headers=auth_headers)

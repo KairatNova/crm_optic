@@ -253,6 +253,7 @@ export default function CrmAppointmentsPage() {
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">Клиент</th>
+              <th className="px-4 py-3">Запись</th>
               <th className="px-4 py-3">Телефон</th>
               <th className="px-4 py-3">Услуга</th>
               <th className="px-4 py-3">Дата/время</th>
@@ -264,13 +265,13 @@ export default function CrmAppointmentsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-4 text-slate-500" colSpan={7}>
+                <td className="px-4 py-4 text-slate-500" colSpan={8}>
                   Загрузка...
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                <td className="px-4 py-4 text-slate-500" colSpan={7}>
+                <td className="px-4 py-4 text-slate-500" colSpan={8}>
                   Записей пока нет
                 </td>
               </tr>
@@ -281,6 +282,14 @@ export default function CrmAppointmentsPage() {
                     <Link href={`/${locale}/crm/clients/${row.client_id}`} className="text-teal-700 hover:underline">
                       {row.client_name || `Клиент #${row.client_id}`}
                     </Link>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Link href={`/${locale}/crm/appointments/${row.id}`} className="text-sm font-semibold text-teal-700 hover:underline">
+                      №{row.id}
+                    </Link>
+                    {row.source === "landing" ? (
+                      <span className="ml-1 rounded bg-indigo-100 px-1 py-0.5 text-[10px] font-semibold text-indigo-800">сайт</span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3">{row.client_phone || "—"}</td>
                   <td className="px-4 py-3">{row.service || "—"}</td>

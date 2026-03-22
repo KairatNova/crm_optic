@@ -201,9 +201,22 @@ function AppointmentCard({ row, locale }: { row: AppointmentRow; locale: string 
       <div className="mt-0.5 text-xs text-slate-500">{row.client_phone || "—"}</div>
       <div className="mt-1 text-xs text-slate-600">{row.service || "—"}</div>
       <div className="mt-1 text-xs text-slate-500">{new Date(row.starts_at).toLocaleString("ru-RU")}</div>
+      {row.source === "landing" ? (
+        <div className="mt-1 text-[10px] font-semibold text-indigo-700">Лендинг</div>
+      ) : null}
       {unknown ? (
         <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-amber-800">Неизвестный статус в БД: {raw}</div>
       ) : null}
+      <div className="mt-2 border-t border-slate-100 pt-2">
+        <Link
+          href={`/${locale}/crm/appointments/${row.id}`}
+          className="text-xs font-semibold text-teal-700 hover:underline"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Открыть запись →
+        </Link>
+      </div>
     </div>
   );
 }

@@ -36,6 +36,8 @@ export type AppointmentRead = {
   status: string | null;
   comment: string | null;
   created_at: string;
+  /** landing — с сайта; crm — из CRM; отсутствует у старых записей */
+  source?: string | null;
 };
 
 export type ClientRead = {
@@ -45,6 +47,11 @@ export type ClientRead = {
   email: string | null;
   gender: string | null;
   birth_date: string | null;
+};
+
+/** Карточка записи: запись + профиль клиента */
+export type AppointmentDetailRead = AppointmentRead & {
+  client: ClientRead;
 };
 
 export type ClientCardRead = {
@@ -151,10 +158,19 @@ export async function getAppointments(token: string, statusFilter?: string): Pro
   return request<AppointmentRead[]>(`/appointments${qs}`, { headers: withAuth(token) });
 }
 
+export async function getAppointmentDetail(token: string, appointmentId: number): Promise<AppointmentDetailRead> {
+  return request<AppointmentDetailRead>(`/appointments/${appointmentId}`, { headers: withAuth(token) });
+}
+
 export async function patchAppointment(
   token: string,
   appointmentId: number,
-  payload: { status?: AppointmentStatus | string; comment?: string; service?: string; starts_at?: string },
+  payload: {
+    status?: AppointmentStatus | string;
+    comment?: string | null;
+    service?: string | null;
+    starts_at?: string;
+  },
 ): Promise<AppointmentRead> {
   return request<AppointmentRead>(`/appointments/${appointmentId}`, {
     method: "PATCH",
