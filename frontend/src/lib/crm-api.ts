@@ -154,8 +154,18 @@ export async function getMe(token: string): Promise<CrmUser> {
   return request<CrmUser>("/auth/me", { headers: withAuth(token) });
 }
 
-export async function getAppointments(token: string, statusFilter?: string): Promise<AppointmentRead[]> {
-  const qs = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
+export async function getAppointments(
+  token: string,
+  filter?: string | { status?: string; clientId?: number },
+): Promise<AppointmentRead[]> {
+  const sp = new URLSearchParams();
+  if (typeof filter === "string" && filter) {
+    sp.set("status", filter);
+  } else if (filter && typeof filter === "object") {
+    if (filter.status) sp.set("status", filter.status);
+    if (filter.clientId != null) sp.set("client_id", String(filter.clientId));
+  }
+  const qs = sp.toString() ? `?${sp}` : "";
   return request<AppointmentRead[]>(`/appointments${qs}`, { headers: withAuth(token) });
 }
 
@@ -196,6 +206,50 @@ export async function patchAppointment(
     headers: withAuth(token),
     body: JSON.stringify(payload),
   });
+}
+
+export async function softDeleteAppointment(token: string, appointmentId: number): Promise<void> {
+  const response = await fetch(apiUrl(`/appointments/${appointmentId}`), {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const payload = await parseJsonOrText<{ detail?: string | unknown }>(response);
+    const detail = payload.detail;
+    const msg =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? JSON.stringify(detail)
+          : detail && typeof detail === "object"
+            ? JSON.stringify(detail)
+            : `HTTP ${response.status}`;
+    const err = new Error(msg) as ApiError;
+    err.status = response.status;
+    throw err;
+  }
+}
+
+export async function softDeleteClient(token: string, clientId: number): Promise<void> {
+  const response = await fetch(apiUrl(`/clients/${clientId}`), {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const payload = await parseJsonOrText<{ detail?: string | unknown }>(response);
+    const detail = payload.detail;
+    const msg =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? JSON.stringify(detail)
+          : detail && typeof detail === "object"
+            ? JSON.stringify(detail)
+            : `HTTP ${response.status}`;
+    const err = new Error(msg) as ApiError;
+    err.status = response.status;
+    throw err;
+  }
 }
 
 export async function getClient(token: string, clientId: number): Promise<ClientRead> {

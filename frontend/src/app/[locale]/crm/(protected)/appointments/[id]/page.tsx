@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -14,7 +14,8 @@ import {
   isPredefinedCancellationReason,
 } from "@/lib/crm-appointment-filters";
 import type { AppointmentDetailRead, AppointmentStatus } from "@/lib/crm-api";
-import { getAppointmentDetail, patchAppointment } from "@/lib/crm-api";
+import { getAppointmentDetail, patchAppointment, softDeleteAppointment } from "@/lib/crm-api";
+import { CRM_BOOKING_SERVICE_OPTIONS } from "@/lib/crm-service-options";
 
 function toDatetimeLocalValue(iso: string): string {
   const d = new Date(iso);
@@ -34,6 +35,7 @@ function sourceLabel(source: string | null | undefined): { text: string; classNa
 
 export default function AppointmentDetailPage() {
   const { token } = useCrmSession();
+  const router = useRouter();
   const params = useParams<{ locale: string; id: string }>();
   const locale = params.locale || "ru";
   const appointmentId = Number(params.id);
@@ -42,6 +44,7 @@ export default function AppointmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [editService, setEditService] = useState("");
   const [editStartsAt, setEditStartsAt] = useState("");
@@ -124,6 +127,26 @@ export default function AppointmentDetailPage() {
     }
   }
 
+  const servicePresetValue = CRM_BOOKING_SERVICE_OPTIONS.includes(editService) ? editService : "__custom__";
+
+  async function onSoftDeleteDetail() {
+    if (!window.confirm("Скрыть эту запись из списков CRM? (мягкое удаление)")) return;
+    if (Number.isNaN(appointmentId)) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await softDeleteAppointment(token, appointmentId);
+      toast.success("Запись скрыта");
+      router.replace(`/${locale}/crm`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось скрыть запись";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const src = sourceLabel(detail?.source);
 
   return (
@@ -155,12 +178,30 @@ export default function AppointmentDetailPage() {
               <div className="mt-6 space-y-4">
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Услуга</span>
-                  <input
-                    value={editService}
-                    onChange={(e) => setEditService(e.target.value)}
+                  <select
+                    value={servicePresetValue}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "__custom__") setEditService("");
+                      else setEditService(v);
+                    }}
                     className="h-10 rounded-xl border border-slate-300 px-3"
-                    placeholder="Название услуги"
-                  />
+                  >
+                    {CRM_BOOKING_SERVICE_OPTIONS.map((label) => (
+                      <option key={label} value={label}>
+                        {label}
+                      </option>
+                    ))}
+                    <option value="__custom__">Другое (вручную)</option>
+                  </select>
+                  {servicePresetValue === "__custom__" ? (
+                    <input
+                      value={editService}
+                      onChange={(e) => setEditService(e.target.value)}
+                      className="mt-2 h-10 rounded-xl border border-slate-300 px-3"
+                      placeholder="Название услуги"
+                    />
+                  ) : null}
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Дата и время</span>
@@ -220,14 +261,24 @@ export default function AppointmentDetailPage() {
                     placeholder="Комментарий к записи…"
                   />
                 </label>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void onSave()}
-                  className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
-                >
-                  {saving ? "Сохранение…" : "Сохранить изменения"}
-                </button>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void onSave()}
+                    className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+                  >
+                    {saving ? "Сохранение…" : "Сохранить изменения"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleting || saving}
+                    onClick={() => void onSoftDeleteDetail()}
+                    className="rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-60"
+                  >
+                    {deleting ? "Скрытие…" : "Скрыть запись"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

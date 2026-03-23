@@ -24,8 +24,10 @@ import {
   getClient,
   lookupClientByPhone,
   patchAppointment,
+  softDeleteAppointment,
 } from "@/lib/crm-api";
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { CRM_BOOKING_SERVICE_OPTIONS } from "@/lib/crm-service-options";
 
 type AppointmentRow = AppointmentRead & {
   client_name?: string;
@@ -72,12 +74,13 @@ export default function CrmAppointmentsPage() {
   const [cancelReasonCode, setCancelReasonCode] = useState("client_request");
   const [cancelReasonOther, setCancelReasonOther] = useState("");
 
+  const [nbFormOpen, setNbFormOpen] = useState(false);
   const [nbPhone, setNbPhone] = useState("");
   const [nbLookup, setNbLookup] = useState<ClientRead | null>(null);
   const [nbLookupTried, setNbLookupTried] = useState(false);
   const [nbName, setNbName] = useState("");
   const [nbClientPhone, setNbClientPhone] = useState("");
-  const [nbService, setNbService] = useState("");
+  const [nbService, setNbService] = useState(() => CRM_BOOKING_SERVICE_OPTIONS[0] ?? "");
   const [nbStarts, setNbStarts] = useState("");
   const [nbSubmitting, setNbSubmitting] = useState(false);
 
@@ -290,7 +293,7 @@ export default function CrmAppointmentsPage() {
       setNbLookupTried(false);
       setNbName("");
       setNbClientPhone("");
-      setNbService("");
+      setNbService(CRM_BOOKING_SERVICE_OPTIONS[0] ?? "");
       setNbStarts("");
       await loadAppointments({ soft: true });
     } catch (e) {
@@ -321,6 +324,23 @@ export default function CrmAppointmentsPage() {
     setCancelTarget(null);
   }
 
+  async function onSoftDeleteRow(row: AppointmentRow) {
+    if (!window.confirm(`Скрыть запись №${row.id} из списков? (мягкое удаление)`)) return;
+    setUpdatingId(row.id);
+    setError(null);
+    try {
+      await softDeleteAppointment(token, row.id);
+      toast.success("Запись скрыта");
+      setAppointments((prev) => prev.filter((x) => x.id !== row.id));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось скрыть запись";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -347,9 +367,20 @@ export default function CrmAppointmentsPage() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-xl border border-teal-100 bg-teal-50/40 p-4">
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setNbFormOpen((v) => !v)}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            {nbFormOpen ? "Скрыть форму новой записи" : "Новая запись (CRM)"}
+          </button>
+        </div>
+
+        {nbFormOpen ? (
+        <div className="mt-3 rounded-xl border border-teal-100 bg-teal-50/40 p-4">
           <h2 className="text-sm font-bold text-teal-900">Новая запись (CRM)</h2>
-          <p className="mt-1 text-xs text-teal-800/90">Поиск клиента по телефону; если не найден — создаётся новый клиент.</p>
+          <p className="mt-1 text-xs text-teal-800/90">Поиск клиента по телефону; если не найден — создаётся новый клиент. Услуга — как на сайте.</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Телефон для поиска</span>
@@ -400,11 +431,17 @@ export default function CrmAppointmentsPage() {
             ) : null}
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Услуга</span>
-              <input
+              <select
                 value={nbService}
                 onChange={(e) => setNbService(e.target.value)}
                 className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-              />
+              >
+                {CRM_BOOKING_SERVICE_OPTIONS.map((label) => (
+                  <option key={label} value={label}>
+                    {label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Дата и время</span>
@@ -425,6 +462,7 @@ export default function CrmAppointmentsPage() {
             {nbSubmitting ? "Создание…" : "Создать запись"}
           </button>
         </div>
+        ) : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-2">
@@ -565,18 +603,19 @@ export default function CrmAppointmentsPage() {
               <th className="px-4 py-3">Статус</th>
               <th className="min-w-[11rem] px-4 py-3">Изменить статус</th>
               <th className="px-4 py-3">Правка</th>
+              <th className="px-4 py-3">Скрыть</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-4 text-slate-500" colSpan={9}>
+                <td className="px-4 py-4 text-slate-500" colSpan={10}>
                   Загрузка...
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                <td className="px-4 py-4 text-slate-500" colSpan={9}>
+                <td className="px-4 py-4 text-slate-500" colSpan={10}>
                   Записей пока нет
                 </td>
               </tr>
@@ -707,6 +746,16 @@ export default function CrmAppointmentsPage() {
                           Изменить
                         </button>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        disabled={updatingId === row.id}
+                        onClick={() => void onSoftDeleteRow(row)}
+                        className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                      >
+                        Скрыть
+                      </button>
                     </td>
                   </tr>
                 );

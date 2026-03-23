@@ -1,28 +1,43 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
 import {
+  appointmentStatusBadgeClass,
+  APPOINTMENT_STATUS_LABELS,
+  isKnownAppointmentStatus,
+} from "@/lib/crm-appointment-filters";
+import {
+  createAppointment,
   createVisionTest,
   createVisit,
   deleteVisit,
   deleteVisionTest,
+  getAppointments,
   getClientCard,
   patchClient,
   patchVisit,
   patchVisionTest,
+  softDeleteAppointment,
+  softDeleteClient,
+  type AppointmentRead,
   type ClientRead,
   type VisitRead,
   type VisionTestRead,
 } from "@/lib/crm-api";
+import { CRM_BOOKING_SERVICE_OPTIONS } from "@/lib/crm-service-options";
 
-type ActiveSection = "visits" | "vision";
+type ActiveSection = "visits" | "vision" | "appointments";
 
 export default function ClientCardPage() {
   const { token } = useCrmSession();
-  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params.locale || "ru";
   const clientId = Number(params.id);
   const [client, setClient] = useState<ClientRead | null>(null);
   const [visits, setVisits] = useState<VisitRead[]>([]);
@@ -76,6 +91,14 @@ export default function ClientCardPage() {
   const [editVisionTestComment, setEditVisionTestComment] = useState("");
   const [activeSection, setActiveSection] = useState<ActiveSection>("visits");
 
+  const [appointments, setAppointments] = useState<AppointmentRead[]>([]);
+  const [bookingFormOpen, setBookingFormOpen] = useState(false);
+  const [nbApptStarts, setNbApptStarts] = useState("");
+  const [nbApptService, setNbApptService] = useState(() => CRM_BOOKING_SERVICE_OPTIONS[0] ?? "");
+  const [nbApptComment, setNbApptComment] = useState("");
+  const [apptSubmitting, setApptSubmitting] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
+
   function toDatetimeLocalValue(iso: string): string {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "";
@@ -109,10 +132,16 @@ export default function ClientCardPage() {
     setLoading(true);
     setError(null);
     try {
-      const card = await getClientCard(token, clientId);
+      const [card, appts] = await Promise.all([
+        getClientCard(token, clientId),
+        getAppointments(token, { clientId }),
+      ]);
       setClient(card.client);
       setVisits(card.visits);
       setVisionTests(card.vision_tests);
+      setAppointments(
+        appts.slice().sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()),
+      );
       setLoading(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки");
@@ -275,6 +304,79 @@ export default function ClientCardPage() {
     setBirthAge("");
   }
 
+  async function onAddAppointmentForClient() {
+    if (!nbApptStarts.trim()) {
+      toast.error("Укажите дату и время записи");
+      return;
+    }
+    setApptSubmitting(true);
+    setError(null);
+    try {
+      await createAppointment(token, {
+        client_id: clientId,
+        service: nbApptService || null,
+        starts_at: new Date(nbApptStarts).toISOString(),
+        comment: nbApptComment.trim() || null,
+      });
+      toast.success("Запись создана");
+      setNbApptStarts("");
+      setNbApptComment("");
+      setNbApptService(CRM_BOOKING_SERVICE_OPTIONS[0] ?? "");
+      setBookingFormOpen(false);
+      const appts = await getAppointments(token, { clientId });
+      setAppointments(
+        appts.slice().sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось создать запись";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setApptSubmitting(false);
+    }
+  }
+
+  async function onSoftDeleteAppointment(apptId: number) {
+    if (!window.confirm("Скрыть запись из списков? (мягкое удаление)")) return;
+    try {
+      await softDeleteAppointment(token, apptId);
+      toast.success("Запись скрыта");
+      setAppointments((prev) => prev.filter((a) => a.id !== apptId));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось удалить запись";
+      setError(msg);
+      toast.error(msg);
+    }
+  }
+
+  async function onSoftDeleteClientProfile() {
+    if (
+      !window.confirm(
+        "Удалить клиента из CRM (мягкое удаление)? Карточка исчезнет из списков; связанные данные останутся в базе.",
+      )
+    ) {
+      return;
+    }
+    setDeletingClient(true);
+    setError(null);
+    try {
+      await softDeleteClient(token, clientId);
+      toast.success("Клиент скрыт из списков");
+      router.replace(`/${locale}/crm/clients`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось удалить клиента";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setDeletingClient(false);
+    }
+  }
+
+  function appointmentStatusLabel(status: string | null | undefined): string {
+    const s = status || "new";
+    return isKnownAppointmentStatus(s) ? APPOINTMENT_STATUS_LABELS[s] : s;
+  }
+
   async function saveEditProfile() {
     if (!client) return;
     setError(null);
@@ -403,13 +505,23 @@ export default function ClientCardPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-xl font-bold">Профиль клиента</h1>
           {!isEditingProfile ? (
-            <button
-              type="button"
-              onClick={startEditProfile}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Редактировать
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={startEditProfile}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Редактировать
+              </button>
+              <button
+                type="button"
+                disabled={deletingClient}
+                onClick={() => void onSoftDeleteClientProfile()}
+                className="rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-60"
+              >
+                {deletingClient ? "Удаление…" : "Удалить клиента"}
+              </button>
+            </div>
           ) : null}
         </div>
 
@@ -552,8 +664,139 @@ export default function ClientCardPage() {
           >
             Тесты зрения
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("appointments")}
+            className={[
+              "rounded-xl px-4 py-2 text-sm font-semibold",
+              activeSection === "appointments" ? "bg-teal-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            Записи
+          </button>
         </div>
       </div>
+
+      {activeSection === "appointments" ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-800">Записи на приём</h2>
+                <p className="mt-1 text-xs text-slate-600">История и ссылки на карточки записей.</p>
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setBookingFormOpen((v) => !v)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+              >
+                {bookingFormOpen ? "Скрыть форму записи" : "Записать на приём"}
+              </button>
+            </div>
+
+            {bookingFormOpen ? (
+              <div className="rounded-xl border border-teal-100 bg-teal-50/40 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-sm">
+                    <span className="text-xs font-medium text-slate-600">Услуга</span>
+                    <select
+                      value={nbApptService}
+                      onChange={(e) => setNbApptService(e.target.value)}
+                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+                    >
+                      {CRM_BOOKING_SERVICE_OPTIONS.map((label) => (
+                        <option key={label} value={label}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="text-xs font-medium text-slate-600">Дата и время</span>
+                    <input
+                      type="datetime-local"
+                      value={nbApptStarts}
+                      onChange={(e) => setNbApptStarts(e.target.value)}
+                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm sm:col-span-2">
+                    <span className="text-xs font-medium text-slate-600">Комментарий</span>
+                    <input
+                      value={nbApptComment}
+                      onChange={(e) => setNbApptComment(e.target.value)}
+                      placeholder="Необязательно"
+                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
+                    />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  disabled={apptSubmitting}
+                  onClick={() => void onAddAppointmentForClient()}
+                  className="mt-3 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+                >
+                  {apptSubmitting ? "Создание…" : "Создать запись"}
+                </button>
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              {appointments.length === 0 ? (
+                <div className="text-sm text-slate-500">Записей пока нет</div>
+              ) : (
+                appointments.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200 p-3 text-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={`/${locale}/crm/appointments/${a.id}`}
+                          className="font-semibold text-teal-700 hover:underline"
+                        >
+                          Запись №{a.id}
+                        </Link>
+                        <span
+                          className={[
+                            "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                            appointmentStatusBadgeClass(a.status),
+                          ].join(" ")}
+                        >
+                          {appointmentStatusLabel(a.status)}
+                        </span>
+                        {a.source === "landing" ? (
+                          <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-800">
+                            сайт
+                          </span>
+                        ) : a.source === "crm" ? (
+                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-800">CRM</span>
+                        ) : null}
+                      </div>
+                      <div className="mt-1 text-slate-700">{a.service || "—"}</div>
+                      <div className="text-xs text-slate-500">{new Date(a.starts_at).toLocaleString("ru-RU")}</div>
+                      {a.comment?.trim() ? (
+                        <div className="mt-1 text-xs text-slate-600">{a.comment}</div>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void onSoftDeleteAppointment(a.id)}
+                      className="shrink-0 rounded-lg border border-rose-300 bg-white px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                    >
+                      Скрыть запись
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {activeSection === "visits" ? (
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
