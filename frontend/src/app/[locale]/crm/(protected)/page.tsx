@@ -168,6 +168,20 @@ export default function CrmAppointmentsPage() {
     return rows;
   }, [appointments, fromDate, toDate, searchQuery, serviceFilter]);
 
+  const stats = useMemo(() => {
+    const total = filteredRows.length;
+    const overdue = filteredRows.filter((r) => isAppointmentOverdue(r)).length;
+    const byStatus = APPOINTMENT_STATUSES.reduce<Record<AppointmentStatus, number>>((acc, s) => {
+      acc[s] = 0;
+      return acc;
+    }, {} as Record<AppointmentStatus, number>);
+    for (const row of filteredRows) {
+      const st = row.status && isKnownAppointmentStatus(row.status) ? row.status : "new";
+      byStatus[st] += 1;
+    }
+    return { total, overdue, byStatus };
+  }, [filteredRows]);
+
   async function setAppointmentStatus(row: AppointmentRow, next: AppointmentStatus, cancellationReason?: string | null) {
     const current = row.status || "new";
     if (current === next) return;
@@ -346,8 +360,8 @@ export default function CrmAppointmentsPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold">Записи</h1>
-            <p className="mt-1 text-sm text-slate-600">Список записей, фильтры, правка времени и услуги в строке, новая запись.</p>
+            <h1 className="text-xl font-bold text-slate-900">Записи</h1>
+            <p className="mt-1 text-sm text-slate-600">Оперативная лента заявок: фильтры, быстрая правка и создание записи из CRM.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -364,6 +378,29 @@ export default function CrmAppointmentsPage() {
             >
               Доска
             </Link>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-medium text-slate-500">Всего в фильтре</div>
+            <div className="mt-1 text-2xl font-extrabold text-slate-900">{stats.total}</div>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <div className="text-xs font-medium text-amber-700">Просрочено</div>
+            <div className="mt-1 text-2xl font-extrabold text-amber-900">{stats.overdue}</div>
+          </div>
+          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+            <div className="text-xs font-medium text-sky-700">Новые</div>
+            <div className="mt-1 text-2xl font-extrabold text-sky-900">{stats.byStatus.new}</div>
+          </div>
+          <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
+            <div className="text-xs font-medium text-violet-700">Подтверждено</div>
+            <div className="mt-1 text-2xl font-extrabold text-violet-900">{stats.byStatus.confirmed}</div>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+            <div className="text-xs font-medium text-emerald-700">Выполнено</div>
+            <div className="mt-1 text-2xl font-extrabold text-emerald-900">{stats.byStatus.done}</div>
           </div>
         </div>
 

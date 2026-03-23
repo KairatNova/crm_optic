@@ -1,6 +1,6 @@
 # CRM Optic — текущий статус проекта
 
-Дата обновления: **2026‑03‑20**
+Дата обновления: **2026‑03‑17**
 
 ## Что сделано (актуально в коде)
 
@@ -29,11 +29,19 @@
 ### Frontend (Next.js + Tailwind)
 
 - Лендинг mobile-first: `/ru`, `/ky`, `/en`, i18n, редирект `/ → /ru`.
-- Форма записи → `POST /public/booking`, валидация телефона KG, слоты времени.
+- Форма записи → `POST /public/booking`, валидация телефона KG.
+- Выбор времени в форме записи: только значения с шагом **5 минут** в диапазоне **10:00–21:00**.
 - **Каркас CRM:**
   - `/{locale}/crm/login` — **новый поток:** `login-request` → бот → `login-verify`, JWT + `GET /auth/me`.
   - защищённые страницы: список записей, карточка клиента (visits / vision-tests), страница админов для owner (`/owner/admins`).
 - В шапке лендинга кнопка **«Вход»** (и в мобильном меню) → CRM login.
+- Обновлён лендинг:
+  - добавлен брендовый логотип/визуальный блок в hero и header;
+  - добавлены секции "Почему выбирают нас" и "Контакты и график";
+  - расширены словари `ru/en/ky` под новые блоки.
+- Начат редизайн CRM shell (в стиле modern admin):
+  - обновлены sidebar/topbar/mobile-tabs в `CrmProtectedShell`;
+  - добавлены KPI-карточки на странице записей (`crm/(protected)/page.tsx`).
 
 ### Тесты backend
 
@@ -45,6 +53,31 @@
 ## Frontend ↔ backend (auth)
 
 CRM UI синхронизирован с текущим API: без Telegram Login Widget, без `/auth/telegram/callback` и `/users/me`. Подробности: **`docs/CRM_TELEGRAM_AUTH.md`**.
+
+---
+
+## Последние правки (март 2026)
+
+1. **Лендинг UI**
+   - Внедрён новый брендовый визуальный стиль.
+   - Добавлены продающие секции и более презентабельная структура главной страницы.
+2. **Форма записи**
+   - Время выбирается только из допустимого списка: шаг 5 минут, интервал 10:00–21:00.
+3. **CORS (dev)**
+   - Исправлены preflight-ошибки для локальной сети (`localhost`, `127.0.0.1`, `192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`).
+4. **CRM UI refresh**
+   - Обновлена оболочка CRM и визуальные метрики на странице записей.
+
+---
+
+## Источники дизайна CRM (референсы)
+
+- [NextAdminHQ / nextjs-admin-dashboard](https://github.com/NextAdminHQ/nextjs-admin-dashboard.git)
+- [NextAdmin demo](https://demo.nextadmin.co/)
+- [Studio Admin (Next + shadcn style)](https://next-shadcn-admin-dashboard.vercel.app/dashboard/default)
+- [CoreUI Free React Admin Template](https://coreui.io/product/free-react-admin-template/#live-preview)
+
+Примечание: в проекте выбран курс на **Next.js/Tailwind-first** стилизацию (ближе к NextAdmin/shadcn), с адаптацией под существующую структуру CRM и API.
 
 ---
 

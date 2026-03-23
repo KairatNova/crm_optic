@@ -97,21 +97,22 @@ export function CrmProtectedShell({
   }
 
   const links = [
-    { href: `/${locale}/crm`, label: "Записи" },
-    { href: `/${locale}/crm/board`, label: "Доска" },
-    { href: `/${locale}/crm/clients`, label: "Клиенты" },
-    { href: `/${locale}/crm/users`, label: "Пользователи" },
+    { href: `/${locale}/crm`, label: "Записи", icon: "📅" },
+    { href: `/${locale}/crm/board`, label: "Канбан", icon: "🧩" },
+    { href: `/${locale}/crm/clients`, label: "Клиенты", icon: "👥" },
+    { href: `/${locale}/crm/users`, label: "Пользователи", icon: "🔐" },
   ];
 
   return (
     <CrmSessionContext.Provider value={session}>
       <Toaster position="top-right" richColors closeButton />
-      <div className="min-h-screen bg-slate-100 text-slate-900">
-        <div className="mx-auto flex max-w-[1400px]">
-          <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-slate-700/50 bg-slate-900 text-slate-100 lg:flex">
-            <div className="border-b border-slate-700/70 p-5">
-              <div className="text-xs tracking-wide text-slate-400">CRM Optic</div>
-              <div className="mt-1 text-lg font-bold">Панель</div>
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        <div className="mx-auto flex max-w-[1560px] gap-4 px-2 py-2 sm:px-3 sm:py-3">
+          <aside className="sticky top-2 hidden h-[calc(100vh-1rem)] w-72 flex-col rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm lg:flex">
+            <div className="border-b border-slate-200 p-5">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">CRM Optic</div>
+              <div className="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Admin Panel</div>
+              <div className="mt-1 text-xs text-slate-500">Управление клиентами и записями</div>
             </div>
             <nav className="flex-1 space-y-1 p-3">
               {links.map((link) => {
@@ -122,22 +123,25 @@ export function CrmProtectedShell({
                     href={link.href}
                     prefetch={false}
                     className={[
-                      "block rounded-xl px-3 py-2 text-sm font-medium transition",
-                      active ? "bg-teal-500/20 text-teal-200" : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                      "flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
+                      active
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
                     ].join(" ")}
                   >
+                    <span aria-hidden>{link.icon}</span>
                     {link.label}
                   </Link>
                 );
               })}
             </nav>
-            <div className="border-t border-slate-700/70 p-4 text-xs text-slate-300">
-              <div className="font-semibold text-slate-100">{displayName(session.user)}</div>
-              <div className="mt-1 text-slate-400">Роль: {session.user.role}</div>
+            <div className="border-t border-slate-200 p-4 text-xs text-slate-600">
+              <div className="font-semibold text-slate-900">{displayName(session.user)}</div>
+              <div className="mt-1">Роль: {session.user.role}</div>
               <button
                 type="button"
                 onClick={session.logout}
-                className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-left text-xs font-semibold hover:bg-slate-800"
+                className="mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Выйти
               </button>
@@ -145,24 +149,52 @@ export function CrmProtectedShell({
           </aside>
 
           <div className="min-h-screen flex-1">
-            <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+            <header className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Панель CRM</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">CRM Workspace</div>
                   <div className="text-sm font-semibold text-slate-900">
                     {displayName(session.user)} ({session.user.role})
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={session.logout}
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 lg:hidden"
-                >
-                  Выйти
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/${locale}/crm`}
+                    className="hidden rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex"
+                  >
+                    Главная CRM
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={session.logout}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 lg:hidden"
+                  >
+                    Выйти
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto lg:hidden">
+                {links.map((link) => {
+                  const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      prefetch={false}
+                      className={[
+                        "whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-semibold",
+                        active
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
+                      ].join(" ")}
+                    >
+                      {link.icon} {link.label}
+                    </Link>
+                  );
+                })}
               </div>
             </header>
-            <main className="p-4 sm:p-6">{children}</main>
+            <main className="p-3 sm:p-4 lg:p-5">{children}</main>
           </div>
         </div>
       </div>
