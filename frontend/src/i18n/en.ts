@@ -10,6 +10,7 @@ export const en = {
   },
   phone: "+996 000 123 456",
   hero: {
+    badge: "Optic stores network",
     title1: "Perfect vision.",
     title2: "Flawless style.",
     subtitle:
@@ -23,6 +24,23 @@ export const en = {
       { k: "Fit", v: "by face shape" },
     ],
     note: "Placeholder image. Replace with a real photo of the shop/specialist.",
+  },
+  highlights: {
+    title: "Why clients choose us",
+    items: [
+      {
+        title: "Experienced specialists",
+        text: "We match frames and lenses based on prescription, style, and daily routine.",
+      },
+      {
+        title: "On-site eye exam",
+        text: "Diagnosis and consultation in one place, without extra visits and queues.",
+      },
+      {
+        title: "Reliable service",
+        text: "Frame adjustment, minor repairs, and support after purchase.",
+      },
+    ],
   },
   popular: {
     title: "Popular frames",
@@ -76,6 +94,14 @@ export const en = {
         comment: "Example: need contact lenses fitting, have a prescription",
       },
     },
+  },
+  contact: {
+    title: "Contacts and hours",
+    address: "17 Internationalnaya St, Yessentuki",
+    hours: "Mon-Sat: 09:00-19:00, Sun: 10:00-17:00",
+    mapHint: "Add an interactive map (Google Maps / 2GIS) in the next iteration.",
+    ctaPhone: "Call us",
+    ctaRoute: "Get directions",
   },
   mobile: {
     stickyCta: "Book",

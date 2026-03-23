@@ -52,17 +52,22 @@ function buildStartsAtISO(date: string, time: string) {
   return d.toISOString();
 }
 
-function generateTimeSlots(stepMinutes = 30) {
-  const slots: string[] = [];
-  for (let h = 9; h <= 18; h++) {
-    for (let m = 0; m < 60; m += stepMinutes) {
-      if (h === 18 && m > 0) continue;
-      const hh = String(h).padStart(2, "0");
-      const mm = String(m).padStart(2, "0");
-      slots.push(`${hh}:${mm}`);
+function isWithinWorkingHours(time: string) {
+  // Allowed: 10:00 through 21:00 (inclusive)
+  return time >= "10:00" && time <= "21:00";
+}
+
+function generateAllowedTimes() {
+  const options: string[] = [];
+  for (let hour = 10; hour <= 21; hour++) {
+    for (let minute = 0; minute < 60; minute += 5) {
+      if (hour === 21 && minute > 0) continue;
+      const hh = String(hour).padStart(2, "0");
+      const mm = String(minute).padStart(2, "0");
+      options.push(`${hh}:${mm}`);
     }
   }
-  return slots;
+  return options;
 }
 
 export function BookingForm({
@@ -84,6 +89,7 @@ export function BookingForm({
   serviceOptions: readonly string[];
   apiBaseUrl: string;
 }) {
+  const timeOptions = useMemo(() => generateAllowedTimes(), []);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [service, setService] = useState(serviceOptions[0] || "");
@@ -95,13 +101,13 @@ export function BookingForm({
   const [message, setMessage] = useState<string | null>(null);
 
   const phoneNormalized = useMemo(() => normalizeKgPhone(phone), [phone]);
-  const timeSlots = useMemo(() => generateTimeSlots(30), []);
 
   const validationError = useMemo(() => {
     if (!name.trim()) return "Введите имя";
     if (!phoneNormalized.e164) return "Введите номер Кыргызстана: +996 XXX XXX XXX";
     if (!date) return "Выберите дату";
     if (!time) return "Выберите время";
+    if (!isWithinWorkingHours(time)) return "Выберите время с 10:00 до 21:00";
     const startsAt = new Date(`${date}T${time}:00`).getTime();
     if (Number.isNaN(startsAt)) return "Некорректная дата/время";
     if (startsAt < Date.now()) return "Выберите время в будущем";
@@ -227,27 +233,18 @@ export function BookingForm({
         </label>
         <label className="grid gap-1 text-sm">
           <span className="text-xs font-medium text-zinc-700">{labels.time}</span>
-          <input type="hidden" value={time} readOnly />
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-            {timeSlots.map((t) => {
-              const active = time === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTime(t)}
-                  className={[
-                    "h-10 rounded-xl border text-sm font-semibold",
-                    active
-                      ? "border-teal-200 bg-teal-50 text-teal-800"
-                      : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50",
-                  ].join(" ")}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
+          <select
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-teal-200 focus:ring-4"
+          >
+            <option value="">--</option>
+            {timeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

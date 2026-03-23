@@ -1,6 +1,7 @@
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BookingForm } from "@/components/BookingForm";
 import { MobileMenu } from "@/components/MobileMenu";
+import { BrandLogo } from "@/components/BrandLogo";
 import { getDictionary } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 
@@ -19,8 +20,8 @@ export default async function Home({
       <header className="sticky top-0 z-50 border-b border-zinc-200/70 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-full bg-teal-600 text-white">
-              <span className="text-sm font-semibold tracking-tight">О</span>
+            <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-zinc-100">
+              <BrandLogo compact className="scale-[0.52]" />
             </div>
             <div className="leading-tight">
               <div className="text-xs font-semibold text-teal-700">{t.brand.toUpperCase()}</div>
@@ -77,6 +78,9 @@ export default async function Home({
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_500px_at_20%_10%,rgba(20,184,166,0.22),transparent_60%),radial-gradient(900px_500px_at_90%_0%,rgba(2,132,199,0.12),transparent_55%)]" />
           <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-8 pt-8 sm:px-6 sm:pb-12 sm:pt-12 lg:grid-cols-2 lg:items-center">
             <div className="relative">
+              <div className="mb-4 inline-flex rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
+                {t.hero.badge}
+              </div>
               <h1 className="text-balance text-3xl font-extrabold tracking-tight sm:text-5xl">
                 {t.hero.title1}
                 <br />
@@ -113,6 +117,9 @@ export default async function Home({
             <div className="relative">
               <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-zinc-100 to-white shadow-sm">
                 <div className="absolute inset-0 bg-[radial-gradient(260px_260px_at_25%_35%,rgba(20,184,166,0.18),transparent_55%),radial-gradient(240px_240px_at_80%_25%,rgba(59,130,246,0.10),transparent_60%)]" />
+                <div className="absolute left-4 right-4 top-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-sm backdrop-blur sm:left-6 sm:right-6 sm:p-4">
+                  <BrandLogo />
+                </div>
                 <div className="absolute bottom-0 left-0 right-0 grid grid-cols-3 gap-3 p-4 sm:p-6">
                   {t.hero.stats.map((s) => (
                     <div key={s.k} className="rounded-2xl bg-white/85 p-4 backdrop-blur">
@@ -124,6 +131,26 @@ export default async function Home({
               </div>
               <div className="mt-3 text-xs text-zinc-500">{t.hero.note}</div>
             </div>
+          </div>
+        </section>
+
+        <section id="about" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.highlights.title}</h2>
+            <a className="hidden text-sm font-semibold text-teal-700 hover:text-teal-800 sm:block" href={`/${locale}/#booking`}>
+              {t.nav.booking} →
+            </a>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {t.highlights.items.map((item, idx) => (
+              <article key={item.title} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                <div className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-teal-50 px-2 text-xs font-bold text-teal-700">
+                  {String(idx + 1).padStart(2, "0")}
+                </div>
+                <h3 className="mt-3 text-base font-semibold text-zinc-900">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">{item.text}</p>
+              </article>
+            ))}
           </div>
         </section>
 
@@ -187,7 +214,7 @@ export default async function Home({
         <section id="booking" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm sm:p-10">
             <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-              <div id="about">
+              <div>
                 <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.booking.title}</h2>
                 <p className="mt-2 text-sm text-zinc-600">{t.booking.subtitle}</p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
@@ -205,6 +232,36 @@ export default async function Home({
                   labels={t.booking.form}
                   serviceOptions={t.booking.form.serviceOptions}
                 />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-10 sm:px-6 sm:pb-14 lg:grid-cols-3">
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 lg:col-span-2">
+              <h3 className="text-lg font-bold text-zinc-900">{t.contact.title}</h3>
+              <p className="mt-2 text-sm text-zinc-700">{t.contact.address}</p>
+              <p className="mt-1 text-sm text-zinc-700">{t.contact.hours}</p>
+              <p className="mt-3 text-xs text-zinc-500">{t.contact.mapHint}</p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="text-sm font-semibold text-zinc-900">{t.city}</div>
+              <div className="mt-3 grid gap-2">
+                <a
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-700"
+                  href={`tel:${t.phone.replace(/[^\d+]/g, "")}`}
+                >
+                  {t.contact.ctaPhone}
+                </a>
+                <a
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.contact.address)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t.contact.ctaRoute}
+                </a>
               </div>
             </div>
           </div>
