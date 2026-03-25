@@ -59,7 +59,6 @@ export default function CrmAnalyticsPage() {
             <div>
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Аналитика и статистика</h1>
-              <p className="mt-1 text-sm text-slate-600">Показатели по выбранному периоду. Локаль: {locale.toUpperCase()}.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="primary" disabled={loading} onClick={() => void load()}>
@@ -81,7 +80,6 @@ export default function CrmAnalyticsPage() {
             <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm shadow-sm">
               <div className="text-xs font-semibold text-slate-500">Текущий диапазон</div>
               <div className="mt-1 font-semibold text-slate-900">{titleRange}</div>
-              <div className="mt-1 text-xs text-slate-500">По дате записи (starts_at) и дате создания клиента (created_at).</div>
             </div>
           </div>
         </CardContent>
@@ -108,7 +106,6 @@ export default function CrmAnalyticsPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="text-xs font-semibold text-slate-500">Новые за период</div>
                 <div className="mt-1 text-2xl font-bold text-slate-900">{data ? data.new_clients : "—"}</div>
-                <div className="mt-1 text-xs text-slate-500">Показывает рост бизнеса</div>
               </div>
             </div>
           </CardContent>
@@ -126,12 +123,10 @@ export default function CrmAnalyticsPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="text-xs font-semibold text-slate-500">Записались (всего)</div>
                 <div className="mt-1 text-2xl font-bold text-slate-900">{data ? data.appointments_total : "—"}</div>
-                <div className="mt-1 text-xs text-slate-500">За день / неделю / месяц — задайте период выше</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="text-xs font-semibold text-slate-500">Пришли (done)</div>
                 <div className="mt-1 text-2xl font-bold text-slate-900">{data ? data.appointments_done : "—"}</div>
-                <div className="mt-1 text-xs text-slate-500">Загрузка магазина</div>
               </div>
             </div>
           </CardContent>
@@ -162,7 +157,6 @@ export default function CrmAnalyticsPage() {
                   <div className="text-xl font-extrabold">{data ? `${data.conversion_percent}%` : "—"}</div>
                 </div>
               </div>
-              <div className="mt-2 text-xs text-slate-500">Показывает качество обработки клиентов</div>
             </div>
           </CardContent>
         </Card>

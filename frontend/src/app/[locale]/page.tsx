@@ -16,15 +16,15 @@ export default async function Home({
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="sticky top-0 z-50 border-b border-zinc-200/70 bg-white/90 backdrop-blur">
+    <div className="min-h-screen bg-white text-slate-900">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-zinc-100">
               <BrandLogo compact className="scale-[0.52]" />
             </div>
             <div className="leading-tight">
-              <div className="text-xs font-semibold text-teal-700">{t.brand.toUpperCase()}</div>
+              <div className="text-xs font-semibold text-[#11766E]">{t.brand.toUpperCase()}</div>
               <div className="text-xs text-zinc-500">{t.city}</div>
             </div>
           </div>
@@ -39,7 +39,7 @@ export default async function Home({
             <a className="hover:text-zinc-950" href={`/${locale}/#shop`}>
               {t.nav.shop}
             </a>
-            <a className="font-semibold text-teal-700 hover:text-teal-800" href={`/${locale}/crm/login`}>
+            <a className="font-semibold text-[#11766E] hover:text-[#0f5f59]" href={`/${locale}/crm/login`}>
               {t.nav.crm}
             </a>
           </nav>
@@ -54,7 +54,7 @@ export default async function Home({
             </a>
             <a
               href={`/${locale}/#booking`}
-              className="hidden h-9 items-center justify-center rounded-full bg-teal-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 md:inline-flex"
+              className="hidden h-9 items-center justify-center rounded-full bg-[#14B8A6] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#11766E] md:inline-flex"
             >
               {t.nav.booking}
             </a>
@@ -75,10 +75,10 @@ export default async function Home({
 
       <main>
         <section className="relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_500px_at_20%_10%,rgba(20,184,166,0.22),transparent_60%),radial-gradient(900px_500px_at_90%_0%,rgba(2,132,199,0.12),transparent_55%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_500px_at_20%_10%,rgba(35,211,238,0.24),transparent_60%),radial-gradient(900px_500px_at_90%_0%,rgba(20,184,166,0.14),transparent_55%)]" />
           <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-8 pt-8 sm:px-6 sm:pb-12 sm:pt-12 lg:grid-cols-2 lg:items-center">
             <div className="relative">
-              <div className="mb-4 inline-flex rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
+              <div className="mb-4 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-[#11766E]">
                 {t.hero.badge}
               </div>
               <h1 className="text-balance text-3xl font-extrabold tracking-tight sm:text-5xl">
@@ -99,7 +99,7 @@ export default async function Home({
                 </a>
                 <a
                   href={`/${locale}/#booking`}
-                  className="inline-flex h-11 items-center justify-center rounded-full bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-[#14B8A6] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#11766E]"
                 >
                   {t.hero.ctaBooking}
                 </a>
@@ -116,7 +116,7 @@ export default async function Home({
 
             <div className="relative">
               <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-zinc-100 to-white shadow-sm">
-                <div className="absolute inset-0 bg-[radial-gradient(260px_260px_at_25%_35%,rgba(20,184,166,0.18),transparent_55%),radial-gradient(240px_240px_at_80%_25%,rgba(59,130,246,0.10),transparent_60%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(260px_260px_at_25%_35%,rgba(35,211,238,0.22),transparent_55%),radial-gradient(240px_240px_at_80%_25%,rgba(20,184,166,0.14),transparent_60%)]" />
                 <div className="absolute left-4 right-4 top-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-sm backdrop-blur sm:left-6 sm:right-6 sm:p-4">
                   <BrandLogo />
                 </div>
@@ -137,14 +137,14 @@ export default async function Home({
         <section id="about" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.highlights.title}</h2>
-            <a className="hidden text-sm font-semibold text-teal-700 hover:text-teal-800 sm:block" href={`/${locale}/#booking`}>
+            <a className="hidden text-sm font-semibold text-[#11766E] hover:text-[#0f5f59] sm:block" href={`/${locale}/#booking`}>
               {t.nav.booking} →
             </a>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {t.highlights.items.map((item, idx) => (
               <article key={item.title} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <div className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-teal-50 px-2 text-xs font-bold text-teal-700">
+                <div className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-cyan-50 px-2 text-xs font-bold text-[#11766E]">
                   {String(idx + 1).padStart(2, "0")}
                 </div>
                 <h3 className="mt-3 text-base font-semibold text-zinc-900">{item.title}</h3>
@@ -160,7 +160,7 @@ export default async function Home({
               <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.popular.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{t.popular.subtitle}</p>
             </div>
-            <a className="hidden text-sm font-semibold text-teal-700 hover:text-teal-800 sm:block" href={`/${locale}/#booking`}>
+            <a className="hidden text-sm font-semibold text-[#11766E] hover:text-[#0f5f59] sm:block" href={`/${locale}/#booking`}>
               {t.nav.booking} →
             </a>
           </div>
@@ -197,7 +197,7 @@ export default async function Home({
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <span className="grid size-9 place-items-center rounded-full bg-teal-50 text-teal-700">
+                      <span className="grid size-9 place-items-center rounded-full bg-cyan-50 text-[#11766E]">
                         <span className="text-sm font-bold">◎</span>
                       </span>
                       <span className="text-sm font-semibold sm:text-base">{s.title}</span>
@@ -249,7 +249,7 @@ export default async function Home({
               <div className="text-sm font-semibold text-zinc-900">{t.city}</div>
               <div className="mt-3 grid gap-2">
                 <a
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-700"
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-[#14B8A6] px-4 text-sm font-semibold text-white hover:bg-[#11766E]"
                   href={`tel:${t.phone.replace(/[^\d+]/g, "")}`}
                 >
                   {t.contact.ctaPhone}
@@ -270,7 +270,7 @@ export default async function Home({
         <footer className="border-t border-zinc-200 bg-white">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <span>© {new Date().getFullYear()} {t.brand}</span>
-            <a className="text-teal-700 hover:text-teal-800" href={`tel:${t.phone.replace(/[^\d+]/g, "")}`}>
+            <a className="text-[#11766E] hover:text-[#0f5f59]" href={`tel:${t.phone.replace(/[^\d+]/g, "")}`}>
               {t.phone}
             </a>
           </div>
@@ -282,7 +282,7 @@ export default async function Home({
         <div className="pointer-events-auto mx-auto max-w-md rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-lg backdrop-blur">
           <a
             href={`/${locale}/#booking`}
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
+            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#14B8A6] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#11766E]"
           >
             {t.mobile.stickyCta}
           </a>

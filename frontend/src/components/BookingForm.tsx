@@ -171,7 +171,7 @@ export function BookingForm({
           className={[
             "rounded-xl border px-4 py-3 text-sm",
             status === "success"
-              ? "border-teal-200 bg-teal-50 text-teal-900"
+              ? "border-cyan-200 bg-cyan-50 text-[#11766E]"
               : status === "error"
                 ? "border-rose-200 bg-rose-50 text-rose-900"
                 : "border-zinc-200 bg-zinc-50 text-zinc-900",
@@ -188,7 +188,7 @@ export function BookingForm({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-teal-200 focus:ring-4"
+            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
             placeholder={labels.placeholders.name}
             autoComplete="name"
           />
@@ -199,7 +199,7 @@ export function BookingForm({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             onBlur={() => setPhone(phoneNormalized.pretty)}
-            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-teal-200 focus:ring-4"
+            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
             placeholder={labels.placeholders.phone}
             inputMode="tel"
             autoComplete="tel"
@@ -213,7 +213,7 @@ export function BookingForm({
         <select
           value={service}
           onChange={(e) => setService(e.target.value)}
-          className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-teal-200 focus:ring-4"
+          className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
         >
           {serviceOptions.map((x) => (
             <option key={x}>{x}</option>
@@ -228,7 +228,7 @@ export function BookingForm({
             value={date}
             onChange={(e) => setDate(e.target.value)}
             type="date"
-            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-teal-200 focus:ring-4"
+            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
           />
         </label>
         <label className="grid gap-1 text-sm">
@@ -236,7 +236,7 @@ export function BookingForm({
           <select
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-teal-200 focus:ring-4"
+            className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
           >
             <option value="">--</option>
             {timeOptions.map((t) => (
@@ -253,7 +253,7 @@ export function BookingForm({
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="min-h-24 rounded-xl border border-zinc-200 bg-white px-4 py-3 outline-none ring-teal-200 focus:ring-4"
+          className="min-h-24 rounded-xl border border-zinc-200 bg-white px-4 py-3 outline-none ring-cyan-200 focus:ring-4"
           placeholder={labels.placeholders.comment}
         />
       </label>
@@ -263,7 +263,7 @@ export function BookingForm({
         disabled={status === "loading"}
         className={[
           "mt-1 inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white shadow-sm",
-          status === "loading" ? "bg-teal-600/70" : "bg-teal-600 hover:bg-teal-700",
+          status === "loading" ? "bg-[#14B8A6]/70" : "bg-[#14B8A6] hover:bg-[#11766E]",
         ].join(" ")}
       >
         {status === "loading" ? "Отправляем..." : labels.submit}
