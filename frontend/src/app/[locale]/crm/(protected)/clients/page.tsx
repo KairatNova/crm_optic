@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import type { ClientRead, OwnerExportVariant } from "@/lib/crm-api";
 import { createClient, downloadOwnerExportExcel, getClients } from "@/lib/crm-api";
 
@@ -158,18 +161,15 @@ export default function ClientsPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold">Клиенты</h1>
-            <p className="mt-1 text-sm text-slate-600">Список клиентов и поиск по имени/телефону/email.</p>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Клиенты</h1>
+            <p className="mt-1 text-sm text-slate-600">Поиск и карточка клиента (визиты / тесты / история записей).</p>
           </div>
           {user.role === "owner" ? (
             <div ref={exportMenuRef} className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setExportMenuOpen((o) => !o)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
-              >
+              <Button variant="outline" onClick={() => setExportMenuOpen((o) => !o)}>
                 Экспорт
-              </button>
+              </Button>
               {exportMenuOpen ? (
                 <div className="absolute right-0 z-20 mt-1 w-[min(100vw-2rem,22rem)] rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
                   <button
@@ -197,32 +197,27 @@ export default function ClientsPage() {
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-sm sm:col-span-2">
             <span className="text-xs font-medium text-slate-600">Поиск</span>
-            <input
+            <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="например: Иван / +996700123456 / admin@example.com"
-              className="h-10 rounded-xl border border-slate-300 px-3"
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Поиск по</span>
-            <select value={mode} onChange={(e) => setMode(e.target.value as SearchMode)} className="h-10 rounded-xl border border-slate-300 px-3">
+            <Select value={mode} onChange={(e) => setMode(e.target.value as SearchMode)}>
               <option value="all">все</option>
               <option value="name">имя</option>
               <option value="phone">телефон</option>
               <option value="email">email</option>
-            </select>
+            </Select>
           </label>
         </div>
 
         <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setCreateFormOpen((v) => !v)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
+          <Button variant="outline" onClick={() => setCreateFormOpen((v) => !v)}>
             {createFormOpen ? "Скрыть форму добавления" : "Добавить клиента"}
-          </button>
+          </Button>
         </div>
 
         {createFormOpen ? (
@@ -230,48 +225,28 @@ export default function ClientsPage() {
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="grid gap-1 text-sm">
                 <span className="text-xs font-medium text-slate-600">Имя *</span>
-                <input
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  className="h-9 rounded-xl border border-slate-300 px-3"
-                  placeholder="Иван Иванов"
-                />
+                <Input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="Иван Иванов" className="h-9" />
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="text-xs font-medium text-slate-600">Телефон *</span>
-                <input
-                  value={createPhone}
-                  onChange={(e) => setCreatePhone(e.target.value)}
-                  className="h-9 rounded-xl border border-slate-300 px-3"
-                  placeholder="+996700123456"
-                />
+                <Input value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} placeholder="+996700123456" className="h-9" />
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="text-xs font-medium text-slate-600">Email</span>
-                <input
-                  value={createEmail}
-                  onChange={(e) => setCreateEmail(e.target.value)}
-                  className="h-9 rounded-xl border border-slate-300 px-3"
-                  placeholder="admin@example.com"
-                />
+                <Input value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} placeholder="admin@example.com" className="h-9" />
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="text-xs font-medium text-slate-600">Пол</span>
-                <input value={createGender} onChange={(e) => setCreateGender(e.target.value)} className="h-9 rounded-xl border border-slate-300 px-3" placeholder="M/F" />
+                <Input value={createGender} onChange={(e) => setCreateGender(e.target.value)} placeholder="M/F" className="h-9" />
               </label>
               <label className="grid gap-1 text-sm sm:col-span-2">
                 <span className="text-xs font-medium text-slate-600">Дата рождения</span>
-                <input type="date" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} className="h-9 rounded-xl border border-slate-300 px-3" />
+                <Input type="date" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} className="h-9" />
               </label>
             </div>
-            <button
-              type="button"
-              onClick={() => void onCreateClient()}
-              disabled={createLoading}
-              className="mt-3 w-full rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
-            >
+            <Button variant="primary" onClick={() => void onCreateClient()} disabled={createLoading} className="mt-3 w-full">
               {createLoading ? "Создаём..." : "Сохранить клиента"}
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -280,13 +255,9 @@ export default function ClientsPage() {
 
       {!listVisible ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setListVisible(true)}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
+          <Button variant="primary" onClick={() => setListVisible(true)}>
             Показать список клиентов
-          </button>
+          </Button>
           <p className="mt-2 text-xs text-slate-600">Найдено: {filtered.length}. На странице отображается до {PAGE_SIZE} клиентов.</p>
         </div>
       ) : (
@@ -298,9 +269,9 @@ export default function ClientsPage() {
             <button
               type="button"
               onClick={() => setListVisible(false)}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="shrink-0"
             >
-              Скрыть список
+              <Button variant="outline" size="sm">Скрыть список</Button>
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -346,25 +317,25 @@ export default function ClientsPage() {
             </table>
           </div>
           <div className="flex items-center justify-between gap-2 px-1">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage <= 1 || loading || filtered.length === 0}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               Назад
-            </button>
+            </Button>
             <div className="text-sm text-slate-600">
               Страница {Math.min(currentPage, totalPages)} из {totalPages}
             </div>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage >= totalPages || loading || filtered.length === 0}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               Вперёд
-            </button>
+            </Button>
           </div>
         </div>
       )}

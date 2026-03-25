@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { Input, Textarea } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import {
   appointmentStatusBadgeClass,
   APPOINTMENT_STATUS_LABELS,
@@ -490,43 +494,38 @@ export default function ClientCardPage() {
   }
 
   if (loading) {
-    return <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Загрузка клиента...</div>;
+    return <Card className="p-5 text-sm text-slate-600">Загрузка клиента...</Card>;
   }
 
   if (!client) {
-    return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">Клиент не найден</div>;
+    return <Card className="border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">Клиент не найден</Card>;
   }
 
   const lastVisionTest = visionTests[0] || null;
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-xl font-bold">Профиль клиента</h1>
-          {!isEditingProfile ? (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={startEditProfile}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Редактировать
-              </button>
-              <button
-                type="button"
-                disabled={deletingClient}
-                onClick={() => void onSoftDeleteClientProfile()}
-                className="rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-60"
-              >
-                {deletingClient ? "Удаление…" : "Удалить клиента"}
-              </button>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Профиль клиента</h1>
             </div>
-          ) : null}
-        </div>
+            {!isEditingProfile ? (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={startEditProfile}>Редактировать</Button>
+                <Button variant="danger" disabled={deletingClient} onClick={() => void onSoftDeleteClientProfile()}>
+                  {deletingClient ? "Удаление…" : "Удалить клиента"}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </CardHeader>
 
         {!isEditingProfile ? (
-          <div className="mt-3 grid gap-1 text-sm text-slate-700">
+          <CardContent>
+          <div className="grid gap-1 text-sm text-slate-700">
             <div>
               <span className="font-semibold">Имя:</span> {client.name}
             </div>
@@ -544,7 +543,7 @@ export default function ClientCardPage() {
             </div>
             {lastVisionTest ? (
               <>
-                <div className="mt-2 pt-2 border-t border-slate-200">
+                <div className="mt-2 border-t border-slate-200 pt-2">
                   <span className="font-semibold">Последний тест зрения:</span> {new Date(lastVisionTest.tested_at).toLocaleString()}
                 </div>
                 <div>
@@ -570,23 +569,25 @@ export default function ClientCardPage() {
               </>
             ) : null}
           </div>
+          </CardContent>
         ) : (
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Имя</span>
-              <input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3" />
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </label>
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Телефон</span>
-              <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3" />
+              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
             </label>
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Email</span>
-              <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3" />
+              <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
             </label>
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Пол</span>
-              <input value={editGender} onChange={(e) => setEditGender(e.target.value)} placeholder="например: M/F" className="h-10 rounded-xl border border-slate-300 px-3" />
+              <Input value={editGender} onChange={(e) => setEditGender(e.target.value)} placeholder="например: M/F" />
             </label>
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Дата рождения</span>
@@ -602,15 +603,14 @@ export default function ClientCardPage() {
               </div>
               <div className="mt-2">
                 {birthMode === "date" ? (
-                  <input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="h-10 rounded-xl border border-slate-300 px-3 w-full" />
+                  <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} />
                 ) : (
-                  <input
+                  <Input
                     type="number"
                     inputMode="numeric"
                     value={birthAge}
                     onChange={(e) => setBirthAge(e.target.value)}
                     placeholder="например: 32"
-                    className="h-10 rounded-xl border border-slate-300 px-3 w-full"
                     min={0}
                     max={130}
                   />
@@ -619,67 +619,50 @@ export default function ClientCardPage() {
             </label>
 
             <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => void saveEditProfile()}
-                className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
-              >
+              <Button variant="primary" disabled={loading} onClick={() => void saveEditProfile()}>
                 {loading ? "Сохраняем..." : "Сохранить"}
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={cancelEditProfile}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-70"
-              >
-                Отмена
-              </button>
+              </Button>
+              <Button variant="outline" disabled={loading} onClick={cancelEditProfile}>Отмена</Button>
             </div>
           </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
 
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveSection("visits")}
-            className={[
-              "rounded-xl px-4 py-2 text-sm font-semibold",
-              activeSection === "visits" ? "bg-teal-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
-            ].join(" ")}
-          >
-            Визиты
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSection("vision")}
-            className={[
-              "rounded-xl px-4 py-2 text-sm font-semibold",
-              activeSection === "vision" ? "bg-teal-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
-            ].join(" ")}
-          >
-            Тесты зрения
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSection("appointments")}
-            className={[
-              "rounded-xl px-4 py-2 text-sm font-semibold",
-              activeSection === "appointments" ? "bg-teal-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
-            ].join(" ")}
-          >
-            Записи
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="pt-4 sm:pt-5">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={activeSection === "visits" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setActiveSection("visits")}
+            >
+              Визиты
+            </Button>
+            <Button
+              variant={activeSection === "vision" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setActiveSection("vision")}
+            >
+              Тесты зрения
+            </Button>
+            <Button
+              variant={activeSection === "appointments" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setActiveSection("appointments")}
+            >
+              Записи
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {activeSection === "appointments" ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="space-y-4">
+        <Card>
+          <CardContent className="pt-4 sm:pt-5">
+            <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-slate-800">Записи на приём</h2>
@@ -688,13 +671,9 @@ export default function ClientCardPage() {
             </div>
 
             <div>
-              <button
-                type="button"
-                onClick={() => setBookingFormOpen((v) => !v)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-              >
+              <Button variant="outline" onClick={() => setBookingFormOpen((v) => !v)}>
                 {bookingFormOpen ? "Скрыть форму записи" : "Записать на приём"}
-              </button>
+              </Button>
             </div>
 
             {bookingFormOpen ? (
@@ -702,45 +681,34 @@ export default function ClientCardPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-sm">
                     <span className="text-xs font-medium text-slate-600">Услуга</span>
-                    <select
-                      value={nbApptService}
-                      onChange={(e) => setNbApptService(e.target.value)}
-                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-                    >
+                    <Select value={nbApptService} onChange={(e) => setNbApptService(e.target.value)}>
                       {CRM_BOOKING_SERVICE_OPTIONS.map((label) => (
                         <option key={label} value={label}>
                           {label}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                   <label className="grid gap-1 text-sm">
                     <span className="text-xs font-medium text-slate-600">Дата и время</span>
-                    <input
+                    <Input
                       type="datetime-local"
                       value={nbApptStarts}
                       onChange={(e) => setNbApptStarts(e.target.value)}
-                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
                     />
                   </label>
                   <label className="grid gap-1 text-sm sm:col-span-2">
                     <span className="text-xs font-medium text-slate-600">Комментарий</span>
-                    <input
+                    <Input
                       value={nbApptComment}
                       onChange={(e) => setNbApptComment(e.target.value)}
                       placeholder="Необязательно"
-                      className="h-10 rounded-xl border border-slate-300 bg-white px-3"
                     />
                   </label>
                 </div>
-                <button
-                  type="button"
-                  disabled={apptSubmitting}
-                  onClick={() => void onAddAppointmentForClient()}
-                  className="mt-3 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
-                >
+                <Button variant="primary" disabled={apptSubmitting} onClick={() => void onAddAppointmentForClient()} className="mt-3">
                   {apptSubmitting ? "Создание…" : "Создать запись"}
-                </button>
+                </Button>
               </div>
             ) : null}
 
@@ -783,23 +751,21 @@ export default function ClientCardPage() {
                         <div className="mt-1 text-xs text-slate-600">{a.comment}</div>
                       ) : null}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void onSoftDeleteAppointment(a.id)}
-                      className="shrink-0 rounded-lg border border-rose-300 bg-white px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                    >
+                    <Button variant="danger" size="sm" onClick={() => void onSoftDeleteAppointment(a.id)} className="shrink-0">
                       Скрыть запись
-                    </button>
+                    </Button>
                   </div>
                 ))
               )}
             </div>
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       {activeSection === "visits" ? (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <Card>
+        <CardContent className="pt-4 sm:pt-5">
         <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <h2 className="text-base font-semibold text-slate-800">Визиты</h2>
@@ -807,28 +773,19 @@ export default function ClientCardPage() {
 
           <div className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-3">
-              <input
-                type="datetime-local"
-                value={visitAt}
-                onChange={(e) => setVisitAt(e.target.value)}
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
+              <Input type="datetime-local" value={visitAt} onChange={(e) => setVisitAt(e.target.value)} />
+              <Input
                 type="text"
                 value={visitComment}
                 onChange={(e) => setVisitComment(e.target.value)}
                 placeholder="Комментарий к визиту"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm sm:col-span-2"
+                className="sm:col-span-2"
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => void onAddVisit()}
-              className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-            >
+            <Button variant="primary" onClick={() => void onAddVisit()}>
               Добавить визит
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -839,34 +796,20 @@ export default function ClientCardPage() {
                 <div key={v.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                   {editingVisitId === v.id ? (
                     <div className="space-y-2">
-                      <input
-                        type="datetime-local"
-                        value={editVisitAt}
-                        onChange={(e) => setEditVisitAt(e.target.value)}
-                        className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                      />
-                      <input
+                      <Input type="datetime-local" value={editVisitAt} onChange={(e) => setEditVisitAt(e.target.value)} />
+                      <Input
                         type="text"
                         value={editVisitComment}
                         onChange={(e) => setEditVisitComment(e.target.value)}
                         placeholder="Комментарий к визиту"
-                        className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
                       />
                       <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void saveEditVisit()}
-                          className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-                        >
+                        <Button variant="primary" onClick={() => void saveEditVisit()}>
                           Сохранить
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEditVisit}
-                          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                        >
+                        </Button>
+                        <Button variant="outline" onClick={cancelEditVisit}>
                           Отмена
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -876,20 +819,12 @@ export default function ClientCardPage() {
                         <div className="text-slate-600">{v.comment || "Без комментария"}</div>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEditVisit(v)}
-                          className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-semibold hover:bg-slate-50"
-                        >
+                        <Button variant="outline" size="sm" onClick={() => startEditVisit(v)}>
                           Редактировать
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void onDeleteVisit(v.id)}
-                          className="rounded-lg border border-rose-300 bg-white px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                        >
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => void onDeleteVisit(v.id)}>
                           Удалить
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -898,110 +833,37 @@ export default function ClientCardPage() {
             )}
           </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
       ) : null}
 
       {activeSection === "vision" ? (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <Card>
+        <CardContent className="pt-4 sm:pt-5">
         <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <input
-                type="datetime-local"
-                value={testedAt}
-                onChange={(e) => setTestedAt(e.target.value)}
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={odSph}
-                onChange={(e) => setOdSph(e.target.value)}
-                placeholder="OD SPH"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={odCyl}
-                onChange={(e) => setOdCyl(e.target.value)}
-                placeholder="OD CYL"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={odAxis}
-                onChange={(e) => setOdAxis(e.target.value)}
-                placeholder="OD AXIS"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={osSph}
-                onChange={(e) => setOsSph(e.target.value)}
-                placeholder="OS SPH"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={osCyl}
-                onChange={(e) => setOsCyl(e.target.value)}
-                placeholder="OS CYL"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={osAxis}
-                onChange={(e) => setOsAxis(e.target.value)}
-                placeholder="OS AXIS"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={pd}
-                onChange={(e) => setPd(e.target.value)}
-                placeholder="PD"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={vaR}
-                onChange={(e) => setVaR(e.target.value)}
-                placeholder="VA прав."
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={vaL}
-                onChange={(e) => setVaL(e.target.value)}
-                placeholder="VA лев."
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={lensType}
-                onChange={(e) => setLensType(e.target.value)}
-                placeholder="Тип линз"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
-              <input
-                type="text"
-                value={frameModel}
-                onChange={(e) => setFrameModel(e.target.value)}
-                placeholder="Модель оправы"
-                className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-              />
+              <Input type="datetime-local" value={testedAt} onChange={(e) => setTestedAt(e.target.value)} />
+              <Input type="text" value={odSph} onChange={(e) => setOdSph(e.target.value)} placeholder="OD SPH" />
+              <Input type="text" value={odCyl} onChange={(e) => setOdCyl(e.target.value)} placeholder="OD CYL" />
+              <Input type="text" value={odAxis} onChange={(e) => setOdAxis(e.target.value)} placeholder="OD AXIS" />
+              <Input type="text" value={osSph} onChange={(e) => setOsSph(e.target.value)} placeholder="OS SPH" />
+              <Input type="text" value={osCyl} onChange={(e) => setOsCyl(e.target.value)} placeholder="OS CYL" />
+              <Input type="text" value={osAxis} onChange={(e) => setOsAxis(e.target.value)} placeholder="OS AXIS" />
+              <Input type="text" value={pd} onChange={(e) => setPd(e.target.value)} placeholder="PD" />
+              <Input type="text" value={vaR} onChange={(e) => setVaR(e.target.value)} placeholder="VA прав." />
+              <Input type="text" value={vaL} onChange={(e) => setVaL(e.target.value)} placeholder="VA лев." />
+              <Input type="text" value={lensType} onChange={(e) => setLensType(e.target.value)} placeholder="Тип линз" />
+              <Input type="text" value={frameModel} onChange={(e) => setFrameModel(e.target.value)} placeholder="Модель оправы" />
             </div>
-            <textarea
+            <Textarea
               value={vtComment}
               onChange={(e) => setVtComment(e.target.value)}
               placeholder="Комментарий к тесту зрения"
-              className="min-h-20 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              className="min-h-20"
             />
-            <button
-              type="button"
-              onClick={() => void onAddVisionTest()}
-              className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-            >
+            <Button variant="primary" onClick={() => void onAddVisionTest()}>
               Добавить тест зрения
-            </button>
+            </Button>
 
             <div className="space-y-2">
               {visionTests.length === 0 ? (
@@ -1011,145 +873,70 @@ export default function ClientCardPage() {
                   <div key={vt.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                     {editingVisionTestId === vt.id ? (
                       <div className="space-y-3">
-                        <input
+                        <Input
                           type="datetime-local"
                           value={editVisionTestAt}
                           onChange={(e) => setEditVisionTestAt(e.target.value)}
-                          className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
                         />
                         <div className="grid gap-2 sm:grid-cols-2">
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">OD SPH</div>
-                            <input
-                              type="text"
-                              value={editOdSph}
-                              onChange={(e) => setEditOdSph(e.target.value)}
-                              placeholder="OD SPH"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editOdSph} onChange={(e) => setEditOdSph(e.target.value)} placeholder="OD SPH" />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">OD CYL</div>
-                            <input
-                              type="text"
-                              value={editOdCyl}
-                              onChange={(e) => setEditOdCyl(e.target.value)}
-                              placeholder="OD CYL"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editOdCyl} onChange={(e) => setEditOdCyl(e.target.value)} placeholder="OD CYL" />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">OD AXIS</div>
-                            <input
-                              type="text"
-                              value={editOdAxis}
-                              onChange={(e) => setEditOdAxis(e.target.value)}
-                              placeholder="OD AXIS"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editOdAxis} onChange={(e) => setEditOdAxis(e.target.value)} placeholder="OD AXIS" />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">OS SPH</div>
-                            <input
-                              type="text"
-                              value={editOsSph}
-                              onChange={(e) => setEditOsSph(e.target.value)}
-                              placeholder="OS SPH"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editOsSph} onChange={(e) => setEditOsSph(e.target.value)} placeholder="OS SPH" />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">OS CYL</div>
-                            <input
-                              type="text"
-                              value={editOsCyl}
-                              onChange={(e) => setEditOsCyl(e.target.value)}
-                              placeholder="OS CYL"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editOsCyl} onChange={(e) => setEditOsCyl(e.target.value)} placeholder="OS CYL" />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">OS AXIS</div>
-                            <input
-                              type="text"
-                              value={editOsAxis}
-                              onChange={(e) => setEditOsAxis(e.target.value)}
-                              placeholder="OS AXIS"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editOsAxis} onChange={(e) => setEditOsAxis(e.target.value)} placeholder="OS AXIS" />
                           </div>
                           <div className="sm:col-span-2 space-y-1">
                             <div className="text-[11px] text-slate-500">PD</div>
-                            <input
-                              type="text"
-                              value={editPd}
-                              onChange={(e) => setEditPd(e.target.value)}
-                              placeholder="PD"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editPd} onChange={(e) => setEditPd(e.target.value)} placeholder="PD" />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">VA прав.</div>
-                            <input
-                              type="text"
-                              value={editVaR}
-                              onChange={(e) => setEditVaR(e.target.value)}
-                              placeholder="VA прав."
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editVaR} onChange={(e) => setEditVaR(e.target.value)} placeholder="VA прав." />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">VA лев.</div>
-                            <input
-                              type="text"
-                              value={editVaL}
-                              onChange={(e) => setEditVaL(e.target.value)}
-                              placeholder="VA лев."
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editVaL} onChange={(e) => setEditVaL(e.target.value)} placeholder="VA лев." />
                           </div>
                           <div className="space-y-1">
                             <div className="text-[11px] text-slate-500">Тип линз</div>
-                            <input
-                              type="text"
-                              value={editLensType}
-                              onChange={(e) => setEditLensType(e.target.value)}
-                              placeholder="Тип линз"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editLensType} onChange={(e) => setEditLensType(e.target.value)} placeholder="Тип линз" />
                           </div>
                           <div className="sm:col-span-2 space-y-1">
                             <div className="text-[11px] text-slate-500">Модель оправы</div>
-                            <input
-                              type="text"
-                              value={editFrameModel}
-                              onChange={(e) => setEditFrameModel(e.target.value)}
-                              placeholder="Модель оправы"
-                              className="h-10 rounded-xl border border-slate-300 px-3 text-sm w-full"
-                            />
+                            <Input type="text" value={editFrameModel} onChange={(e) => setEditFrameModel(e.target.value)} placeholder="Модель оправы" />
                           </div>
                         </div>
-                        <textarea
+                        <Textarea
                           value={editVisionTestComment}
                           onChange={(e) => setEditVisionTestComment(e.target.value)}
                           placeholder="Комментарий к тесту зрения"
-                          className="min-h-20 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                          className="min-h-20"
                         />
                         <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void saveEditVisionTest()}
-                            className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-                          >
+                          <Button variant="primary" onClick={() => void saveEditVisionTest()}>
                             Сохранить
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEditVisionTest}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                          >
+                          </Button>
+                          <Button variant="outline" onClick={cancelEditVisionTest}>
                             Отмена
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ) : (
@@ -1169,20 +956,12 @@ export default function ClientCardPage() {
                         )}
                         <div className="text-slate-600">{vt.comment || "Без комментария"}</div>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEditVisionTest(vt)}
-                            className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-semibold hover:bg-slate-50"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => startEditVisionTest(vt)}>
                             Редактировать
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void onDeleteVisionTest(vt.id)}
-                            className="rounded-lg border border-rose-300 bg-white px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                          >
+                          </Button>
+                          <Button variant="danger" size="sm" onClick={() => void onDeleteVisionTest(vt.id)}>
                             Удалить
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -1191,7 +970,8 @@ export default function ClientCardPage() {
               )}
             </div>
           </div>
-      </div>
+        </CardContent>
+      </Card>
       ) : null}
     </div>
   );

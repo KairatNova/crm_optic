@@ -50,6 +50,15 @@ export type ClientRead = {
   birth_date: string | null;
 };
 
+export type AnalyticsSummary = {
+  total_clients: number;
+  new_clients: number;
+  appointments_total: number;
+  appointments_done: number;
+  conversion_percent: number;
+  popular_services: { label: string; count: number }[];
+};
+
 /** Карточка записи: запись + профиль клиента */
 export type AppointmentDetailRead = AppointmentRead & {
   client: ClientRead;
@@ -266,6 +275,17 @@ export async function lookupClientByPhone(token: string, phone: string): Promise
     if (st === 404) return null;
     throw e;
   }
+}
+
+export async function getAnalyticsSummary(
+  token: string,
+  params?: { from?: string; to?: string },
+): Promise<AnalyticsSummary> {
+  const sp = new URLSearchParams();
+  if (params?.from) sp.set("from_date", params.from);
+  if (params?.to) sp.set("to_date", params.to);
+  const qs = sp.toString() ? `?${sp}` : "";
+  return request<AnalyticsSummary>(`/analytics/summary${qs}`, { headers: withAuth(token) });
 }
 
 export async function getClientCard(token: string, clientId: number): Promise<ClientCardRead> {

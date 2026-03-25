@@ -5,6 +5,9 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import {
   APPOINTMENT_STATUSES,
   APPOINTMENT_STATUS_LABELS,
@@ -357,92 +360,85 @@ export default function CrmAppointmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Записи</h1>
-            <p className="mt-1 text-sm text-slate-600">Оперативная лента заявок: фильтры, быстрая правка и создание записи из CRM.</p>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Записи</h1>
+            <p className="mt-1 text-sm text-slate-600">Оперативная лента: фильтры, quick create, inline-правка, мягкое удаление.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={loading || refreshing}
-              onClick={() => refresh()}
-              className="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-            >
+            <Button variant="primary" disabled={loading || refreshing} onClick={() => refresh()}>
               {refreshing ? "Обновление…" : "Обновить"}
-            </button>
+            </Button>
             <Link
               href={`/${locale}/crm/board`}
-              className="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+              className="shrink-0"
             >
-              Доска
+              <Button variant="outline">Доска</Button>
             </Link>
           </div>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div className="text-xs font-medium text-slate-500">Всего в фильтре</div>
-            <div className="mt-1 text-2xl font-extrabold text-slate-900">{stats.total}</div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500">Всего (в фильтре)</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</div>
+            <div className="mt-1 text-xs text-slate-500">С учётом локальных фильтров</div>
           </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-            <div className="text-xs font-medium text-amber-700">Просрочено</div>
-            <div className="mt-1 text-2xl font-extrabold text-amber-900">{stats.overdue}</div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm">
+            <div className="text-xs font-semibold text-amber-700">Просрочено</div>
+            <div className="mt-1 text-2xl font-bold text-amber-900">{stats.overdue}</div>
+            <div className="mt-1 text-xs text-amber-800/80">Не done/cancelled</div>
           </div>
-          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
-            <div className="text-xs font-medium text-sky-700">Новые</div>
-            <div className="mt-1 text-2xl font-extrabold text-sky-900">{stats.byStatus.new}</div>
+          <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4 shadow-sm">
+            <div className="text-xs font-semibold text-sky-700">Новые</div>
+            <div className="mt-1 text-2xl font-bold text-sky-900">{stats.byStatus.new}</div>
+            <div className="mt-1 text-xs text-sky-800/80">Статус new</div>
           </div>
-          <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
-            <div className="text-xs font-medium text-violet-700">Подтверждено</div>
-            <div className="mt-1 text-2xl font-extrabold text-violet-900">{stats.byStatus.confirmed}</div>
+          <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 shadow-sm">
+            <div className="text-xs font-semibold text-violet-700">Подтверждено</div>
+            <div className="mt-1 text-2xl font-bold text-violet-900">{stats.byStatus.confirmed}</div>
+            <div className="mt-1 text-xs text-violet-800/80">Статус confirmed</div>
           </div>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-            <div className="text-xs font-medium text-emerald-700">Выполнено</div>
-            <div className="mt-1 text-2xl font-extrabold text-emerald-900">{stats.byStatus.done}</div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm">
+            <div className="text-xs font-semibold text-emerald-700">Выполнено</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-900">{stats.byStatus.done}</div>
+            <div className="mt-1 text-xs text-emerald-800/80">Статус done</div>
           </div>
         </div>
 
         <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setNbFormOpen((v) => !v)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
+          <Button variant="outline" onClick={() => setNbFormOpen((v) => !v)}>
             {nbFormOpen ? "Скрыть форму новой записи" : "Новая запись (CRM)"}
-          </button>
+          </Button>
         </div>
 
         {nbFormOpen ? (
-        <div className="mt-3 rounded-xl border border-teal-100 bg-teal-50/40 p-4">
-          <h2 className="text-sm font-bold text-teal-900">Новая запись (CRM)</h2>
-          <p className="mt-1 text-xs text-teal-800/90">Поиск клиента по телефону; если не найден — создаётся новый клиент. Услуга — как на сайте.</p>
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <h2 className="text-sm font-bold text-slate-900">Quick create</h2>
+          <p className="mt-1 text-xs text-slate-600">Поиск клиента по телефону; если не найден — создаётся новый клиент. Услуга — из списка.</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Телефон для поиска</span>
               <div className="flex gap-2">
-                <input
+                <Input
                   value={nbPhone}
                   onChange={(e) => {
                     setNbPhone(e.target.value);
                     setNbLookupTried(false);
                   }}
                   placeholder="+996…"
-                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3"
+                  className="min-w-0 flex-1"
                 />
-                <button
-                  type="button"
-                  onClick={() => void runClientLookup()}
-                  className="h-10 shrink-0 rounded-xl border border-teal-600 bg-white px-3 text-sm font-semibold text-teal-800 hover:bg-teal-50"
-                >
+                <Button variant="primary" onClick={() => void runClientLookup()} className="shrink-0">
                   Найти
-                </button>
+                </Button>
               </div>
             </label>
             {nbLookup ? (
-              <div className="sm:col-span-2 rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm">
-                <div className="text-xs font-medium text-slate-500">Найден клиент</div>
+              <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
+                <div className="text-xs font-semibold text-slate-500">Найден клиент</div>
                 <div className="font-semibold text-slate-900">{nbLookup.name}</div>
                 <div className="text-slate-600">{nbLookup.phone}</div>
               </div>
@@ -450,95 +446,64 @@ export default function CrmAppointmentsPage() {
               <>
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Имя (новый клиент)</span>
-                  <input
-                    value={nbName}
-                    onChange={(e) => setNbName(e.target.value)}
-                    className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-                  />
+                  <Input value={nbName} onChange={(e) => setNbName(e.target.value)} />
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Телефон</span>
-                  <input
-                    value={nbClientPhone}
-                    onChange={(e) => setNbClientPhone(e.target.value)}
-                    className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-                  />
+                  <Input value={nbClientPhone} onChange={(e) => setNbClientPhone(e.target.value)} />
                 </label>
               </>
             ) : null}
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Услуга</span>
-              <select
-                value={nbService}
-                onChange={(e) => setNbService(e.target.value)}
-                className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-              >
+              <Select value={nbService} onChange={(e) => setNbService(e.target.value)}>
                 {CRM_BOOKING_SERVICE_OPTIONS.map((label) => (
                   <option key={label} value={label}>
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Дата и время</span>
-              <input
-                type="datetime-local"
-                value={nbStarts}
-                onChange={(e) => setNbStarts(e.target.value)}
-                className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-              />
+              <Input type="datetime-local" value={nbStarts} onChange={(e) => setNbStarts(e.target.value)} />
             </label>
           </div>
-          <button
-            type="button"
-            disabled={nbSubmitting}
-            onClick={() => void submitNewBooking()}
-            className="mt-3 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
-          >
+          <Button variant="primary" disabled={nbSubmitting} onClick={() => void submitNewBooking()} className="mt-3">
             {nbSubmitting ? "Создание…" : "Создать запись"}
-          </button>
+          </Button>
         </div>
         ) : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-2">
             <span className="text-xs font-medium text-slate-600">Поиск</span>
-            <input
+            <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Имя, телефон, услуга, комментарий…"
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Статус (загрузка с сервера)</span>
-            <select
-              value={apiStatusFilter}
-              onChange={(e) => setApiStatusFilter(e.target.value as ApiStatusFilter)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            >
+            <Select value={apiStatusFilter} onChange={(e) => setApiStatusFilter(e.target.value as ApiStatusFilter)}>
               <option value="all">Все статусы</option>
               {APPOINTMENT_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {APPOINTMENT_STATUS_LABELS[s]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Услуга</span>
-            <select
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value as BoardServiceFilter)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            >
+            <Select value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value as BoardServiceFilter)}>
               {BOARD_SERVICE_FILTER_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <div className="text-xs text-slate-500 sm:col-span-2 lg:col-span-2 lg:self-end">
             В таблице: <span className="font-semibold text-slate-700">{filteredRows.length}</span> из загруженных{" "}
@@ -549,21 +514,11 @@ export default function CrmAppointmentsPage() {
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Дата от (необязательно)</span>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            />
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Дата до (по умолчанию — сегодня)</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            />
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </label>
         </div>
         <p className="mt-2 text-xs text-slate-500">

@@ -99,6 +99,7 @@ export function CrmProtectedShell({
   const links = [
     { href: `/${locale}/crm`, label: "Записи", icon: "📅" },
     { href: `/${locale}/crm/board`, label: "Канбан", icon: "🧩" },
+    { href: `/${locale}/crm/analytics`, label: "Аналитика", icon: "📊" },
     { href: `/${locale}/crm/clients`, label: "Клиенты", icon: "👥" },
     { href: `/${locale}/crm/users`, label: "Пользователи", icon: "🔐" },
   ];

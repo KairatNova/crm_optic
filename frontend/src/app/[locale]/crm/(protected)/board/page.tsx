@@ -17,6 +17,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import {
   BOARD_SERVICE_FILTER_OPTIONS,
   CRM_CANCELLATION_REASONS,
@@ -154,10 +157,10 @@ function KanbanColumn({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
   return (
-    <div className={["flex w-[min(100%,280px)] shrink-0 flex-col rounded-2xl border-2 shadow-sm", theme.shell].join(" ")}>
-      <div className={["border-b px-3 py-2", theme.header].join(" ")}>
+    <div className={["flex w-[min(100%,280px)] shrink-0 flex-col rounded-2xl border shadow-sm", theme.shell].join(" ")}>
+      <div className={["border-b px-3 py-2.5", theme.header].join(" ")}>
         <div className={["text-sm font-bold", theme.headerTitle].join(" ")}>{title}</div>
-        <div className={["text-xs", theme.headerMeta].join(" ")}>{recordsCountLabel(count)}</div>
+        <div className={["text-xs font-medium", theme.headerMeta].join(" ")}>{recordsCountLabel(count)}</div>
       </div>
       <div
         ref={setNodeRef}
@@ -195,7 +198,7 @@ function AppointmentCard({
       ref={setNodeRef}
       style={style}
       className={[
-        "rounded-xl border border-slate-200/90 bg-white/95 p-3 text-sm shadow-sm backdrop-blur-sm",
+        "rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm",
         isDragging ? "opacity-60" : "",
         overdue ? "border-amber-400/90 bg-amber-50/40 ring-1 ring-amber-200/80" : "",
       ].join(" ")}
@@ -493,62 +496,72 @@ export default function CrmBoardPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold">Доска</h1>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Kanban</h1>
             <p className="mt-1 text-sm text-slate-600">
               Записи по статусам. Перетащите карточку за ручку слева; клик по карточке открывает панель.
             </p>
           </div>
-          <button
-            type="button"
-            disabled={loading || refreshing}
-            onClick={() => void refresh()}
-            className="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-          >
+          <Button variant="primary" disabled={loading || refreshing} onClick={() => void refresh()}>
             {refreshing ? "Обновление…" : "Обновить"}
-          </button>
+          </Button>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500">Всего (загружено)</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900">{appointments.length}</div>
+            <div className="mt-1 text-xs text-slate-500">Записей в памяти</div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500">На доске</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900">{filteredRows.length}</div>
+            <div className="mt-1 text-xs text-slate-500">С учётом фильтров</div>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm">
+            <div className="text-xs font-semibold text-amber-700">Просрочено</div>
+            <div className="mt-1 text-2xl font-bold text-amber-900">{filteredRows.filter(isAppointmentOverdue).length}</div>
+            <div className="mt-1 text-xs text-amber-800/80">Не done/cancelled</div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500">Выбранный статус</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900">{statusFilter === "all" ? "Все" : statusFilter}</div>
+            <div className="mt-1 text-xs text-slate-500">Локальный фильтр</div>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-2">
             <span className="text-xs font-medium text-slate-600">Поиск</span>
-            <input
+            <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Имя, телефон, услуга, комментарий…"
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Статус записи</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilterValue)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            >
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilterValue)}>
               <option value="all">Все статусы</option>
               {KANBAN_COLUMNS.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Услуга</span>
-            <select
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value as BoardServiceFilter)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            >
+            <Select value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value as BoardServiceFilter)}>
               {BOARD_SERVICE_FILTER_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <div className="text-xs text-slate-500 sm:col-span-2 lg:col-span-2 lg:self-end">
             На доске: <span className="font-semibold text-slate-700">{filteredRows.length}</span> из {appointments.length}
@@ -558,21 +571,11 @@ export default function CrmBoardPage() {
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Дата от (необязательно)</span>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            />
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-slate-600">Дата до (по умолчанию — сегодня)</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 bg-white px-3"
-            />
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </label>
         </div>
         <p className="mt-2 text-xs text-slate-500">
@@ -605,7 +608,7 @@ export default function CrmBoardPage() {
         <div className="fixed inset-0 z-40 flex justify-end">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-900/40"
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-[1px]"
             aria-label="Закрыть панель"
             onClick={() => setSelectedRow(null)}
           />
@@ -618,7 +621,7 @@ export default function CrmBoardPage() {
               <button
                 type="button"
                 onClick={() => setSelectedRow(null)}
-                className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               >
                 Закрыть
               </button>

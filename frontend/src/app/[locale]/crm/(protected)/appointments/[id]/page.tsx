@@ -6,6 +6,10 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { Input, Textarea } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import {
   APPOINTMENT_STATUSES,
   APPOINTMENT_STATUS_LABELS,
@@ -164,28 +168,31 @@ export default function AppointmentDetailPage() {
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">Загрузка…</div>
+        <Card className="p-8 text-center text-slate-500">Загрузка…</Card>
       ) : detail ? (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900">Запись №{detail.id}</h1>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${src.className}`}>{src.text}</span>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Создана: {new Date(detail.created_at).toLocaleString("ru-RU")}</p>
-
-              <div className="mt-6 space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
+                  <span className="text-slate-300">/</span>
+                  <h1 className="text-xl font-bold text-slate-900">Запись №{detail.id}</h1>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${src.className}`}>{src.text}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Создана: {new Date(detail.created_at).toLocaleString("ru-RU")}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Услуга</span>
-                  <select
+                  <Select
                     value={servicePresetValue}
                     onChange={(e) => {
                       const v = e.target.value;
                       if (v === "__custom__") setEditService("");
                       else setEditService(v);
                     }}
-                    className="h-10 rounded-xl border border-slate-300 px-3"
                   >
                     {CRM_BOOKING_SERVICE_OPTIONS.map((label) => (
                       <option key={label} value={label}>
@@ -193,100 +200,85 @@ export default function AppointmentDetailPage() {
                       </option>
                     ))}
                     <option value="__custom__">Другое (вручную)</option>
-                  </select>
+                  </Select>
                   {servicePresetValue === "__custom__" ? (
-                    <input
+                    <Input
                       value={editService}
                       onChange={(e) => setEditService(e.target.value)}
-                      className="mt-2 h-10 rounded-xl border border-slate-300 px-3"
+                      className="mt-2"
                       placeholder="Название услуги"
                     />
                   ) : null}
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Дата и время</span>
-                  <input
-                    type="datetime-local"
-                    value={editStartsAt}
-                    onChange={(e) => setEditStartsAt(e.target.value)}
-                    className="h-10 rounded-xl border border-slate-300 px-3"
-                  />
+                  <Input type="datetime-local" value={editStartsAt} onChange={(e) => setEditStartsAt(e.target.value)} />
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Статус</span>
-                  <select
+                  <Select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as AppointmentStatus)}
-                    className="h-10 rounded-xl border border-slate-300 px-3"
                   >
                     {APPOINTMENT_STATUSES.map((s) => (
                       <option key={s} value={s}>
                         {APPOINTMENT_STATUS_LABELS[s]}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 {editStatus === "cancelled" ? (
                   <div className="space-y-2 rounded-xl border border-rose-100 bg-rose-50/50 p-3">
                     <div className="text-xs font-medium text-rose-900">Причина отмены</div>
-                    <select
+                    <Select
                       value={editCancelReasonCode}
                       onChange={(e) => setEditCancelReasonCode(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm"
                     >
                       {CRM_CANCELLATION_REASONS.map((r) => (
                         <option key={r.value} value={r.value}>
                           {r.label}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     {editCancelReasonCode === "other" ? (
-                      <textarea
+                      <Textarea
                         value={editCancelReasonOther}
                         onChange={(e) => setEditCancelReasonOther(e.target.value)}
                         rows={2}
                         placeholder="Уточнение…"
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                       />
                     ) : null}
                   </div>
                 ) : null}
                 <label className="grid gap-1 text-sm">
                   <span className="text-xs font-medium text-slate-600">Комментарий</span>
-                  <textarea
+                  <Textarea
                     value={editComment}
                     onChange={(e) => setEditComment(e.target.value)}
                     rows={4}
-                    className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
                     placeholder="Комментарий к записи…"
                   />
                 </label>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void onSave()}
-                    className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
-                  >
+                  <Button variant="primary" disabled={saving} onClick={() => void onSave()}>
                     {saving ? "Сохранение…" : "Сохранить изменения"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={deleting || saving}
-                    onClick={() => void onSoftDeleteDetail()}
-                    className="rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-60"
-                  >
+                  </Button>
+                  <Button variant="danger" disabled={deleting || saving} onClick={() => void onSoftDeleteDetail()}>
                     {deleting ? "Скрытие…" : "Скрыть запись"}
-                  </button>
+                  </Button>
                 </div>
-              </div>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1">
-            <h2 className="text-lg font-bold text-slate-900">Профиль клиента</h2>
-            <p className="mt-1 text-xs text-slate-500">Данные на момент открытия страницы. Полная история — в карточке.</p>
-            <dl className="mt-4 space-y-3 text-sm">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <h2 className="text-lg font-bold text-slate-900">Профиль клиента</h2>
+              <p className="mt-1 text-xs text-slate-500">Данные на момент открытия страницы.</p>
+            </CardHeader>
+            <CardContent>
+              <dl className="space-y-3 text-sm">
               <div>
                 <dt className="text-xs font-medium text-slate-500">Имя</dt>
                 <dd className="font-medium text-slate-900">{detail.client.name}</dd>
@@ -309,14 +301,14 @@ export default function AppointmentDetailPage() {
                   {detail.client.birth_date ? new Date(detail.client.birth_date).toLocaleDateString("ru-RU") : "—"}
                 </dd>
               </div>
-            </dl>
-            <Link
-              href={`/${locale}/crm/clients/${detail.client_id}`}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-teal-600 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
-            >
-              Открыть карточку клиента
-            </Link>
-          </div>
+              </dl>
+              <Link href={`/${locale}/crm/clients/${detail.client_id}`} className="mt-5 inline-flex w-full">
+                <Button variant="outline" className="w-full">
+                  Открыть карточку клиента
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       ) : null}
     </div>
