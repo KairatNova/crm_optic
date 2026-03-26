@@ -16,6 +16,7 @@ from app.models.appointment import Appointment  # noqa: F401
 from app.models.client import Client  # noqa: F401
 from app.models.login_verification_code import LoginVerificationCode  # noqa: F401
 from app.models.telegram_pending_link import TelegramPendingLink  # noqa: F401
+from app.models.landing_locale_content import LandingLocaleContent  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.vision_test import VisionTest  # noqa: F401
 from app.models.visit import Visit  # noqa: F401

@@ -2,10 +2,11 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.core.rate_limit import rate_limit_public_booking
 from app.models.appointment import Appointment
 from app.models.client import Client
 from app.schemas.appointment import AppointmentRead
@@ -16,7 +17,12 @@ router = APIRouter(prefix="/public", tags=["public"])
 
 
 @router.post("/booking", response_model=AppointmentRead, status_code=status.HTTP_201_CREATED)
-async def public_booking(payload: PublicBookingCreate, db: AsyncSession = Depends(get_db)) -> Appointment:
+async def public_booking(
+    request: Request,
+    payload: PublicBookingCreate,
+    db: AsyncSession = Depends(get_db),
+) -> Appointment:
+    rate_limit_public_booking(request)
     if payload.starts_at.tzinfo is None:
         starts_at = payload.starts_at.replace(tzinfo=timezone.utc)
     else:

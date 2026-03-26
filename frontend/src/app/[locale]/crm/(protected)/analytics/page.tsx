@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
 import { Button } from "@/components/ui/Button";
@@ -19,8 +18,6 @@ function todayLocalDate(): string {
 
 export default function CrmAnalyticsPage() {
   const { token } = useCrmSession();
-  const params = useParams<{ locale: string }>();
-  const locale = params.locale || "ru";
 
   const [fromDate, setFromDate] = useState<string>(() => {
     const d = new Date();

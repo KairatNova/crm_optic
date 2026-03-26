@@ -24,6 +24,7 @@ from app.models.appointment import Appointment
 from app.models.appointment_audit import AppointmentAudit  # noqa: F401
 from app.models.base import Base
 from app.models.client import Client
+from app.models.landing_locale_content import LandingLocaleContent  # noqa: F401
 from app.models.user import User
 from app.models.vision_test import VisionTest
 from app.models.visit import Visit
@@ -33,8 +34,10 @@ os.environ.setdefault("JWT_SECRET", "test-secret")
 os.environ.setdefault("JWT_ALGORITHM", "HS256")
 os.environ.setdefault("JWT_EXPIRE_MINUTES", "60")
 
-# `get_settings()` is cached, clear it so env overrides take effect.
-get_settings.cache_clear()
+# Если `get_settings` обёрнут в lru_cache — сбросить, чтобы подхватить env тестов.
+_gs = get_settings
+if hasattr(_gs, "cache_clear"):
+    _gs.cache_clear()
 
 
 @pytest_asyncio.fixture(scope="function")

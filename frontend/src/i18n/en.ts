@@ -90,7 +90,7 @@ export const en = {
       serviceOptions: ["Eye exam", "Frames & lenses fitting", "Contact lenses", "Service & repair"],
       placeholders: {
         name: "Ivan",
-        phone: "+7 (___) ___‑__‑__",
+        phone: "+996 ___ ___ ___",
         comment: "Example: need contact lenses fitting, have a prescription",
       },
     },

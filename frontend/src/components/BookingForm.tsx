@@ -204,7 +204,6 @@ export function BookingForm({
             inputMode="tel"
             autoComplete="tel"
           />
-          <div className="text-[11px] text-zinc-500">Пример: +996 700 123 456</div>
         </label>
       </div>
 

@@ -4,6 +4,7 @@ import { MobileMenu } from "@/components/MobileMenu";
 import { BrandLogo } from "@/components/BrandLogo";
 import { getDictionary } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
+import { applyLandingOverrides } from "@/lib/landing-overrides";
 
 export default async function Home({
   params,
@@ -12,8 +13,24 @@ export default async function Home({
 }) {
   const { locale: raw } = await params;
   const locale = raw as Locale;
-  const t = getDictionary(locale);
+  const baseDict = getDictionary(locale);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+  let t = baseDict;
+  try {
+    const r = await fetch(
+      `${apiBaseUrl.replace(/\/+$/, "")}/public/landing-content?locale=${encodeURIComponent(locale)}`,
+      { next: { revalidate: 60 } },
+    );
+    if (r.ok) {
+      const data = (await r.json()) as { payload?: Record<string, unknown> };
+      if (data.payload && Object.keys(data.payload).length > 0) {
+        t = applyLandingOverrides(baseDict, data.payload);
+      }
+    }
+  } catch {
+    /* офлайн / API недоступен — остаётся статический словарь */
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900">

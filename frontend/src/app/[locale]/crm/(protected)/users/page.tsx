@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import type { CrmUser } from "@/lib/crm-api";
 import { createOwnerAdmin, listOwnerAdmins, patchOwnerAdmin } from "@/lib/crm-api";
 
@@ -176,209 +180,153 @@ export default function CrmUsersPage() {
 
   if (user.role !== "owner") {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-        Доступно только для owner.
-      </div>
+      <Card className="border-amber-200 bg-amber-50">
+        <CardContent className="py-5 text-sm text-amber-900">Доступно только для owner.</CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h1 className="text-xl font-bold">Администраторы</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Создание учётных записей с логином и паролем. После входа админ привязывает Telegram по коду из бота. Первый{" "}
-          <strong>owner</strong> создаётся на сервере (скрипт/сид), не через эту форму.
-        </p>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <Card>
+        <CardHeader>
+          <h1 className="text-xl font-bold text-slate-900">Администраторы</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Создание учётных записей с логином и паролем. После входа админ привязывает Telegram по коду из бота. Первый{" "}
+            <strong>owner</strong> создаётся на сервере (скрипт/сид), не через эту форму.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Username</span>
+              <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin1" />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Телефон (+996…)</span>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+996700123456" />
+            </label>
+            <label className="grid gap-1 text-sm sm:col-span-2">
+              <span className="text-xs font-medium text-slate-600">Пароль *</span>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Имя</span>
+              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-slate-600">Email</span>
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            <label className="grid gap-1 text-sm sm:col-span-2">
+              <span className="text-xs font-medium text-slate-600">Telegram @username (опционально)</span>
+              <Input
+                value={telegramUsername}
+                onChange={(e) => setTelegramUsername(e.target.value.replace(/^@/, ""))}
+                placeholder="without_at"
+              />
+            </label>
+          </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Username</span>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin1"
-              className="h-10 rounded-xl border border-slate-300 px-3"
-            />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Телефон (+996…)</span>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+996700123456"
-              className="h-10 rounded-xl border border-slate-300 px-3"
-            />
-          </label>
-          <label className="grid gap-1 text-sm sm:col-span-2">
-            <span className="text-xs font-medium text-slate-600">Пароль *</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 px-3"
-            />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Имя</span>
-            <input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 px-3"
-            />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Email</span>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 px-3"
-            />
-          </label>
-          <label className="grid gap-1 text-sm sm:col-span-2">
-            <span className="text-xs font-medium text-slate-600">Telegram @username (опционально)</span>
-            <input
-              value={telegramUsername}
-              onChange={(e) => setTelegramUsername(e.target.value.replace(/^@/, ""))}
-              placeholder="without_at"
-              className="h-10 rounded-xl border border-slate-300 px-3"
-            />
-          </label>
-        </div>
+          <Button type="button" variant="primary" onClick={() => void onCreateAdmin()} disabled={loading}>
+            {loading ? "Создаём…" : "Добавить администратора"}
+          </Button>
 
-        <button
-          type="button"
-          onClick={() => void onCreateAdmin()}
-          disabled={loading}
-          className="mt-4 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
-        >
-          {loading ? "Создаём…" : "Добавить администратора"}
-        </button>
+          {message ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{message}</div>
+          ) : null}
+          {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{error}</div> : null}
+        </CardContent>
+      </Card>
 
-        {message ? <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{message}</div> : null}
-        {error ? <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{error}</div> : null}
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold">Список админов</h2>
-        {listLoading ? (
-          <p className="mt-2 text-sm text-slate-500">Загрузка…</p>
-        ) : admins.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">Пока нет администраторов.</p>
-        ) : (
-          <ul className="mt-3 divide-y divide-slate-100">
-            {admins.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
-                <div className="min-w-[180px]">
-                  <div className="font-medium">{displayLogin(a)}</div>
-                  <div className="text-xs text-slate-500">
-                    {a.full_name || "—"} · verified: {a.is_verified ? "да" : "нет"} · active: {a.is_active ? "да" : "нет"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void toggleActive(a)}
-                    className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-semibold hover:bg-slate-50"
-                  >
-                    {a.is_active ? "Деактивировать" : "Активировать"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => startEdit(a)}
-                    className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-semibold hover:bg-slate-50"
-                  >
-                    Редактировать
-                  </button>
-                </div>
-
-                {editingAdminId === a.id ? (
-                  <div className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" checked={editActive} onChange={(e) => setEditActive(e.target.checked)} />
-                        Активен
-                      </label>
-                      <label className="grid gap-1 text-sm">
-                        <span className="text-xs font-medium text-slate-600">Новый пароль (опционально)</span>
-                        <input
-                          type="password"
-                          value={editPassword}
-                          onChange={(e) => setEditPassword(e.target.value)}
-                          placeholder="Если менять — введите новый"
-                          className="h-10 rounded-xl border border-slate-300 px-3"
-                        />
-                      </label>
-
-                      <label className="grid gap-1 text-sm">
-                        <span className="text-xs font-medium text-slate-600">Username</span>
-                        <input
-                          value={editUsername}
-                          onChange={(e) => setEditUsername(e.target.value)}
-                          placeholder="admin1"
-                          className="h-10 rounded-xl border border-slate-300 px-3"
-                        />
-                      </label>
-                      <label className="grid gap-1 text-sm">
-                        <span className="text-xs font-medium text-slate-600">Телефон (+996…)</span>
-                        <input
-                          value={editPhone}
-                          onChange={(e) => setEditPhone(e.target.value)}
-                          placeholder="+996700123456"
-                          className="h-10 rounded-xl border border-slate-300 px-3"
-                        />
-                      </label>
-
-                      <label className="grid gap-1 text-sm sm:col-span-2">
-                        <span className="text-xs font-medium text-slate-600">Имя</span>
-                        <input
-                          value={editFullName}
-                          onChange={(e) => setEditFullName(e.target.value)}
-                          className="h-10 rounded-xl border border-slate-300 px-3"
-                        />
-                      </label>
-                      <label className="grid gap-1 text-sm sm:col-span-2">
-                        <span className="text-xs font-medium text-slate-600">Email</span>
-                        <input
-                          value={editEmail}
-                          onChange={(e) => setEditEmail(e.target.value)}
-                          className="h-10 rounded-xl border border-slate-300 px-3"
-                        />
-                      </label>
-                      <label className="grid gap-1 text-sm sm:col-span-2">
-                        <span className="text-xs font-medium text-slate-600">Telegram @username</span>
-                        <input
-                          value={editTelegramUsername}
-                          onChange={(e) => setEditTelegramUsername(e.target.value.replace(/^@/, ""))}
-                          className="h-10 rounded-xl border border-slate-300 px-3"
-                        />
-                      </label>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => void saveEditAdmin(a)}
-                        className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
-                      >
-                        {loading ? "Сохраняем…" : "Сохранить"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={cancelEdit}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-70"
-                      >
-                        Отмена
-                      </button>
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold text-slate-900">Список админов</h2>
+        </CardHeader>
+        <CardContent>
+          {listLoading ? (
+            <p className="text-sm text-slate-500">Загрузка…</p>
+          ) : admins.length === 0 ? (
+            <p className="text-sm text-slate-500">Пока нет администраторов.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {admins.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-4 text-sm">
+                  <div className="min-w-[180px]">
+                    <div className="font-medium text-slate-900">{displayLogin(a)}</div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <Badge variant="muted">{a.full_name || "—"}</Badge>
+                      {a.is_verified ? <Badge>verified</Badge> : <Badge variant="muted">не verified</Badge>}
+                      {a.is_active ? <Badge>active</Badge> : <Badge variant="muted">off</Badge>}
                     </div>
                   </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                  <div className="flex items-center gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => void toggleActive(a)}>
+                      {a.is_active ? "Деактивировать" : "Активировать"}
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => startEdit(a)}>
+                      Редактировать
+                    </Button>
+                  </div>
+
+                  {editingAdminId === a.id ? (
+                    <div className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="flex items-center gap-2 text-sm text-slate-700">
+                          <input type="checkbox" checked={editActive} onChange={(e) => setEditActive(e.target.checked)} />
+                          Активен
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span className="text-xs font-medium text-slate-600">Новый пароль (опционально)</span>
+                          <Input
+                            type="password"
+                            value={editPassword}
+                            onChange={(e) => setEditPassword(e.target.value)}
+                            placeholder="Если менять — введите новый"
+                          />
+                        </label>
+
+                        <label className="grid gap-1 text-sm">
+                          <span className="text-xs font-medium text-slate-600">Username</span>
+                          <Input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="admin1" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span className="text-xs font-medium text-slate-600">Телефон (+996…)</span>
+                          <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+996700123456" />
+                        </label>
+
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span className="text-xs font-medium text-slate-600">Имя</span>
+                          <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span className="text-xs font-medium text-slate-600">Email</span>
+                          <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span className="text-xs font-medium text-slate-600">Telegram @username</span>
+                          <Input
+                            value={editTelegramUsername}
+                            onChange={(e) => setEditTelegramUsername(e.target.value.replace(/^@/, ""))}
+                          />
+                        </label>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button type="button" variant="primary" disabled={loading} onClick={() => void saveEditAdmin(a)}>
+                          {loading ? "Сохраняем…" : "Сохранить"}
+                        </Button>
+                        <Button type="button" variant="outline" disabled={loading} onClick={cancelEdit}>
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

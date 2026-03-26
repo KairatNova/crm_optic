@@ -1,13 +1,16 @@
 # CRM Optic — текущий статус проекта
 
-Дата обновления: **2026‑03‑17**
+Дата обновления: **2026‑03‑26**
 
 ## Что сделано (актуально в коде)
 
 ### Backend (FastAPI)
 
 - Async DB (`AsyncEngine` + `AsyncSession`), Alembic, модели MVP.
-- **Публичный лендинг:** `POST /public/booking` — создаёт клиента и запись.
+- **Публичный лендинг:** `POST /public/booking` — создаёт клиента и запись (лимит запросов с одного IP: **20/мин**, см. `app/core/rate_limit.py`).
+- **Публичный контент лендинга:** `GET /public/landing-content?locale=ru` — JSON-переопределения текстов (пустой `payload`, если не задано в CRM).
+- **Аналитика (CRM, JWT):** `GET /analytics/summary` — сводка по клиентам/записям и популярным услугам (период опционально `from_date`, `to_date`).
+- **Контент лендинга (owner, JWT):** `GET/PUT /owner/landing-content` — сохранение `payload` по локали.
 - **CRM API (под JWT):**
   - `GET/POST /clients`, `GET /clients/{id}`
   - `GET/POST /clients/{id}/visits`
@@ -24,7 +27,7 @@
 - `GET /auth/me` — текущий пользователь.
 - **Owner:** `POST/GET/PATCH /owner/admins` — создание и управление админами (username/phone, пароль и т.д.).
 - Безопасность: bcrypt для паролей, хэш кода, TTL, лимит попыток (см. `docs/CRM_TELEGRAM_AUTH.md`).
-- Миграции: в том числе поток owner/admin (`0005` и связанные изменения схемы `users`).
+- Миграции: в том числе поток owner/admin (`0005` и связанные изменения схемы `users`), **`0010_client_created_at`** (поле `clients.created_at` для метрик), **`0011_landing_locale_content`** (таблица `landing_locale_content`).
 
 ### Frontend (Next.js + Tailwind)
 
@@ -42,6 +45,8 @@
 - Начат редизайн CRM shell (в стиле modern admin):
   - обновлены sidebar/topbar/mobile-tabs в `CrmProtectedShell`;
   - добавлены KPI-карточки на странице записей (`crm/(protected)/page.tsx`).
+- **CRM:** страницы **Календарь** (`/crm/calendar`), **Аналитика**, **Контент сайта** (только owner) — редактирование текстов лендинга по локали; лендинг подмешивает ответ API с `revalidate: 60`.
+- Примеры переменных: корневой **`.env.example`**, **`frontend/.env.example`** (`NEXT_PUBLIC_API_BASE_URL`).
 
 ### Тесты backend
 
@@ -67,6 +72,14 @@ CRM UI синхронизирован с текущим API: без Telegram Log
    - Исправлены preflight-ошибки для локальной сети (`localhost`, `127.0.0.1`, `192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`).
 4. **CRM UI refresh**
    - Обновлена оболочка CRM и визуальные метрики на странице записей.
+5. **Инфра и безопасность публичной записи**
+   - Расширены шаблоны env (CORS, `BACKEND_API_BASE_URL` для бота, фронт).
+   - Rate limit на `POST /public/booking`.
+6. **Продукт**
+   - Недельный календарь записей в CRM.
+   - CMS лендинга (owner): API + страница «Контент сайта».
+7. **Telegram-бот**
+   - Логирование ошибок, поддержка `BACKEND_API_BASE_URL`, см. `docs/CRM_TELEGRAM_AUTH.md`.
 
 ---
 
@@ -96,9 +109,10 @@ CRM UI синхронизирован с текущим API: без Telegram Log
 
 ## Что осталось сделать (приоритет)
 
-1. **Telegram-бот:** обработка `/start <token>`, вызов `POST /auth/telegram/start`, отправка кода пользователю.
-2. **Owner bootstrap:** первый owner создаётся через сиды/скрипт/ручную запись в БД с хэшем пароля (уточнить в вашем процессе развёртывания).
-3. **Production roadmap:** kanban, календарь, аналитика — см. `PRODUCTION_PLAN.md`.
+1. **Деплой:** на сервере поднять Postgres, выполнить **`alembic upgrade head`** (включая `0010` и `0011`), выставить **`CORS_ORIGINS`** и **`NEXT_PUBLIC_API_BASE_URL`** под реальные домены.
+2. **Telegram-бот в проде:** держать процесс `telegram_crm_login_bot.py` (systemd/Docker) или webhook; см. раздел в **`docs/CRM_TELEGRAM_AUTH.md`**.
+3. **Owner bootstrap:** первый owner — сид/скрипт/ручная запись в БД (см. документацию).
+4. **Углубление:** полноценный календарь (месяц, drag), расширение CMS (услуги, отзывы), rate limit за Redis при нескольких воркерах — см. `PRODUCTION_PLAN.md`.
 
 ---
 
@@ -108,8 +122,15 @@ CRM UI синхронизирован с текущим API: без Telegram Log
 
 ```bash
 cd backend
-alembic upgrade head   # или .venv/bin/alembic
-uvicorn app.main:app --reload --port 8000
+.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\alembic upgrade head
+.venv\Scripts\uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Бот (отдельный процесс, из `backend/` с активированным venv):**
+
+```bash
+python telegram_crm_login_bot.py
 ```
 
 ### Frontend

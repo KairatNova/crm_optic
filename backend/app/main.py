@@ -9,7 +9,9 @@ from app.api.routers.clients import router as clients_router
 from app.api.routers.health import router as health_router
 from app.api.routers.owner_admins import router as owner_admins_router
 from app.api.routers.owner_export import router as owner_export_router
+from app.api.routers.owner_landing import router as owner_landing_router
 from app.api.routers.public_booking import router as public_booking_router
+from app.api.routers.public_landing import router as public_landing_router
 from app.api.routers.visits import router as visits_router
 from app.api.routers.vision_tests import router as vision_tests_router
 from app.api.routers.visit_and_vision import router as visit_and_vision_router
@@ -41,7 +43,9 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(auth_router)
     app.include_router(public_booking_router)
+    app.include_router(public_landing_router)
     app.include_router(owner_admins_router)
+    app.include_router(owner_landing_router)
     app.include_router(owner_export_router)
     app.include_router(clients_router, dependencies=_crm_deps)
     app.include_router(analytics_router, dependencies=_crm_deps)

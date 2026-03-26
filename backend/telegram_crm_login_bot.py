@@ -1,11 +1,14 @@
 import asyncio
+import logging
 import os
-import re
 from typing import Any
 
 import httpx
 
 from app.core.config import get_settings
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger("telegram_crm_login_bot")
 
 
 def _telegram_api_base() -> str:
@@ -13,17 +16,46 @@ def _telegram_api_base() -> str:
 
 
 def _read_backend_api_base() -> str:
-    # В проекте backend обычно поднимается локально на BACKEND_PORT (см. backend/.env).
+    # Явный URL API (удобно для Docker / удалённого сервера). Иначе — localhost + BACKEND_PORT.
+    explicit = os.getenv("BACKEND_API_BASE_URL", "").strip()
+    if explicit:
+        return explicit.rstrip("/")
     port = os.getenv("BACKEND_PORT", "8000")
     return f"http://127.0.0.1:{port}"
 
 
 def _start_token_from_text(text: str) -> str | None:
-    # Обычно Telegram присылает: "/start <token>"
+    # Deep link: "/start <token>"; в группах иногда "/start@BotName <token>"
     parts = text.strip().split()
     if len(parts) < 2:
         return None
+    first = parts[0]
+    if not (first == "/start" or first.startswith("/start@")):
+        return None
     return parts[1]
+
+
+async def _delete_webhook_if_set(client: httpx.AsyncClient, telegram_api: str, bot_token: str) -> None:
+    """С активным webhook getUpdates не получает сообщения — типичная причина «Старт нажал, кода нет»."""
+    info = await client.get(f"{telegram_api}/bot{bot_token}/getWebhookInfo")
+    info.raise_for_status()
+    data = info.json()
+    if not data.get("ok"):
+        return
+    url = (data.get("result") or {}).get("url") or ""
+    if url:
+        logger.warning("Webhook уже установлен (%s) — отключаю для long polling", url)
+        del_r = await client.post(f"{telegram_api}/bot{bot_token}/deleteWebhook", json={"drop_pending_updates": False})
+        del_r.raise_for_status()
+
+
+async def _send_user_text(
+    client: httpx.AsyncClient, telegram_api: str, bot_token: str, chat_id: int, text: str
+) -> None:
+    await client.post(
+        f"{telegram_api}/bot{bot_token}/sendMessage",
+        json={"chat_id": chat_id, "text": text},
+    )
 
 
 async def main() -> None:
@@ -32,6 +64,7 @@ async def main() -> None:
         raise SystemExit("TELEGRAM_BOT_TOKEN is missing")
 
     api_base = _read_backend_api_base()
+    logger.info("Polling Telegram updates; backend API: %s", api_base)
     bot_token = settings.telegram_bot_token
 
     telegram_api = _telegram_api_base()
@@ -41,6 +74,11 @@ async def main() -> None:
         headers_for_backend["X-Bot-Secret"] = settings.telegram_bot_webhook_secret
 
     async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            await _delete_webhook_if_set(client, telegram_api, bot_token)
+        except Exception:
+            logger.exception("getWebhookInfo/deleteWebhook failed (проверьте TELEGRAM_BOT_TOKEN)")
+
         while True:
             try:
                 r = await client.get(
@@ -60,11 +98,7 @@ async def main() -> None:
 
                     message = update.get("message") or update.get("edited_message") or {}
                     text = message.get("text") or ""
-                    if not text.startswith("/start"):
-                        continue
-
-                    start_token = _start_token_from_text(text)
-                    if not start_token:
+                    if not text.strip().startswith("/start"):
                         continue
 
                     chat = message.get("chat") or {}
@@ -75,32 +109,80 @@ async def main() -> None:
                     if not isinstance(chat_id, int):
                         continue
 
-                    # 1) Call backend to bind chat and get login code message.
-                    start_resp = await client.post(
-                        f"{api_base}/auth/telegram/start",
-                        json={
-                            "start_token": start_token,
-                            "chat_id": chat_id,
-                            "telegram_username": telegram_username,
-                        },
-                        headers=headers_for_backend,
-                    )
-                    if start_resp.status_code >= 400:
-                        # If backend returns 4xx, we just ignore and wait for next update.
+                    start_token = _start_token_from_text(text)
+                    if not start_token:
+                        await _send_user_text(
+                            client,
+                            telegram_api,
+                            bot_token,
+                            chat_id,
+                            "Войдите через CRM: введите логин и пароль и откройте выданную ссылку "
+                            "(кнопка «Старт» должна открыться именно из этой ссылки).",
+                        )
                         continue
-                    start_out = start_resp.json()
+
+                    # 1) Call backend to bind chat and get login code message.
+                    try:
+                        start_resp = await client.post(
+                            f"{api_base}/auth/telegram/start",
+                            json={
+                                "start_token": start_token,
+                                "chat_id": chat_id,
+                                "telegram_username": telegram_username,
+                            },
+                            headers=headers_for_backend,
+                        )
+                    except httpx.RequestError as e:
+                        logger.warning("auth/telegram/start unreachable (%s): %s", api_base, e)
+                        await _send_user_text(
+                            client,
+                            telegram_api,
+                            bot_token,
+                            chat_id,
+                            "Не удалось связаться с сервером входа. Проверьте, что API запущен и "
+                            "для бота задан верный BACKEND_API_BASE_URL (если бот не на той же машине).",
+                        )
+                        continue
+
+                    if start_resp.status_code >= 400:
+                        body = (await start_resp.aread()).decode(errors="replace")[:500]
+                        logger.warning(
+                            "auth/telegram/start failed: %s %s",
+                            start_resp.status_code,
+                            body,
+                        )
+                        if start_resp.status_code == 403:
+                            user_msg = "Ошибка доступа к серверу (секрет бота). Проверьте TELEGRAM_BOT_WEBHOOK_SECRET в .env и заголовок у бота."
+                        elif start_resp.status_code == 400:
+                            user_msg = (
+                                "Ссылка входа устарела или уже использована. Вернитесь в CRM и запросите вход заново."
+                            )
+                        else:
+                            user_msg = "Ошибка сервера при входе. Попробуйте снова через минуту или обратитесь к администратору."
+                        await _send_user_text(client, telegram_api, bot_token, chat_id, user_msg)
+                        continue
+
+                    try:
+                        start_out = start_resp.json()
+                    except Exception:
+                        logger.exception("auth/telegram/start: не JSON в ответе")
+                        await _send_user_text(
+                            client,
+                            telegram_api,
+                            bot_token,
+                            chat_id,
+                            "Некорректный ответ сервера. Проверьте URL API (BACKEND_API_BASE_URL).",
+                        )
+                        continue
+
                     message_to_user = start_out.get("message_to_user")
                     if not message_to_user:
                         continue
 
-                    # 2) Send message back to the user.
-                    await client.post(
-                        f"{telegram_api}/bot{bot_token}/sendMessage",
-                        json={"chat_id": chat_id, "text": message_to_user},
-                    )
+                    await _send_user_text(client, telegram_api, bot_token, chat_id, message_to_user)
 
             except Exception:
-                # Keep bot alive. In production you'd log traceback properly.
+                logger.exception("poll loop error")
                 await asyncio.sleep(2)
 
 

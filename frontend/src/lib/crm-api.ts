@@ -277,6 +277,22 @@ export async function lookupClientByPhone(token: string, phone: string): Promise
   }
 }
 
+export type LandingContentDTO = { locale: string; payload: Record<string, unknown> };
+
+export async function getOwnerLandingContent(token: string, locale: string): Promise<LandingContentDTO> {
+  return request<LandingContentDTO>(`/owner/landing-content?locale=${encodeURIComponent(locale)}`, {
+    headers: withAuth(token),
+  });
+}
+
+export async function putOwnerLandingContent(token: string, body: LandingContentDTO): Promise<LandingContentDTO> {
+  return request<LandingContentDTO>("/owner/landing-content", {
+    method: "PUT",
+    headers: withAuth(token),
+    body: JSON.stringify(body),
+  });
+}
+
 export async function getAnalyticsSummary(
   token: string,
   params?: { from?: string; to?: string },

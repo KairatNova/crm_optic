@@ -51,6 +51,20 @@
 - `GET /owner/admins` — список админов
 - `PATCH /owner/admins/{id}` — активировать/деактивировать, сбросить пароль
 
+## Запуск бота (long polling)
+
+В репозитории: **`backend/telegram_crm_login_bot.py`**.
+
+1. В `.env` (корень или `backend/`): **`TELEGRAM_BOT_TOKEN`**, при необходимости **`TELEGRAM_BOT_WEBHOOK_SECRET`** (тот же секрет проверяется в **`POST /auth/telegram/start`** заголовком `X-Bot-Secret`).
+2. API должен быть доступен с машины, где крутится бот. По умолчанию бот стучится в **`http://127.0.0.1:<BACKEND_PORT>`** (`BACKEND_PORT` по умолчанию `8000`). Для удалённого API задайте **`BACKEND_API_BASE_URL`** (без завершающего `/`).
+3. Из каталога `backend/` с установленными зависимостями:
+
+```bash
+python telegram_crm_login_bot.py
+```
+
+В лог пишутся старт (URL API) и предупреждения, если backend отвечает 4xx/5xx на `auth/telegram/start`. В production обычно используют **systemd**, **Docker** или webhook вместо polling.
+
 ## ENV переменные
 
 - `JWT_SECRET`

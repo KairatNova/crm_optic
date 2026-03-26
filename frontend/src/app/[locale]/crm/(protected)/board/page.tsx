@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { toast } from "sonner";
 
 import { useCrmSession } from "@/components/crm/CrmProtectedShell";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -496,7 +497,8 @@ export default function CrmBoardPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+      <Card>
+        <CardHeader className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
@@ -578,10 +580,11 @@ export default function CrmBoardPage() {
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </label>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="text-xs text-slate-500">
           «Дата от» можно не заполнять — нижней границы не будет. «Дата до» изначально сегодня; очистите поле, чтобы убрать верхнюю границу.
         </p>
-      </div>
+        </CardHeader>
+      </Card>
 
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
 
