@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BookingForm } from "@/components/BookingForm";
 import { MobileMenu } from "@/components/MobileMenu";
@@ -5,6 +7,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { getDictionary } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 import { applyLandingOverrides } from "@/lib/landing-overrides";
+import { landingDemoPhotos } from "@/lib/landing-demo-photos";
 
 export default async function Home({
   params,
@@ -132,16 +135,25 @@ export default async function Home({
             </div>
 
             <div className="relative">
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-zinc-100 to-white shadow-sm">
-                <div className="absolute inset-0 bg-[radial-gradient(260px_260px_at_25%_35%,rgba(35,211,238,0.22),transparent_55%),radial-gradient(240px_240px_at_80%_25%,rgba(20,184,166,0.14),transparent_60%)]" />
-                <div className="absolute left-4 right-4 top-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-sm backdrop-blur sm:left-6 sm:right-6 sm:p-4">
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 shadow-sm">
+                <Image
+                  src={landingDemoPhotos.hero.src}
+                  alt={landingDemoPhotos.hero.alt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(260px_260px_at_25%_35%,rgba(35,211,238,0.18),transparent_55%),radial-gradient(240px_240px_at_80%_25%,rgba(20,184,166,0.12),transparent_60%)]" />
+                <div className="absolute left-4 right-4 top-4 rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm backdrop-blur sm:left-6 sm:right-6 sm:p-4">
                   <BrandLogo />
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 grid grid-cols-3 gap-3 p-4 sm:p-6">
                   {t.hero.stats.map((s) => (
-                    <div key={s.k} className="rounded-2xl bg-white/85 p-4 backdrop-blur">
+                    <div key={s.k} className="rounded-2xl bg-white/90 p-4 shadow-sm backdrop-blur">
                       <div className="text-xs text-zinc-500">{s.k}</div>
-                      <div className="mt-1 text-sm font-semibold">{s.v}</div>
+                      <div className="mt-1 text-sm font-semibold text-zinc-900">{s.v}</div>
                     </div>
                   ))}
                 </div>
@@ -183,21 +195,30 @@ export default async function Home({
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {t.popular.items.map((item) => (
-              <div
-                key={item.name}
-                className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="grid aspect-[4/3] place-items-center rounded-xl bg-zinc-50">
-                  <div className="h-10 w-16 rounded-full border-2 border-zinc-300 bg-white shadow-sm" />
+            {t.popular.items.map((item, idx) => {
+              const photo = landingDemoPhotos.popular[idx % landingDemoPhotos.popular.length];
+              return (
+                <div
+                  key={item.name}
+                  className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100">
+                    <Image
+                      src={photo.src}
+                      alt={photo.alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-sm font-semibold">{item.name}</div>
+                    <div className="text-xs text-zinc-500">Brand</div>
+                    <div className="mt-1 text-sm font-bold text-zinc-900">{item.price}</div>
+                  </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-sm font-semibold">{item.name}</div>
-                  <div className="text-xs text-zinc-500">Brand</div>
-                  <div className="mt-1 text-sm font-bold text-zinc-900">{item.price}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
