@@ -266,13 +266,9 @@ export default function ClientsPage() {
             <div className="text-sm text-slate-600">
               {loading ? "Загрузка..." : `Показано ${paginated.length} из ${filtered.length}`}
             </div>
-            <button
-              type="button"
-              onClick={() => setListVisible(false)}
-              className="shrink-0"
-            >
-              <Button variant="outline" size="sm">Скрыть список</Button>
-            </button>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => setListVisible(false)}>
+              Скрыть список
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
