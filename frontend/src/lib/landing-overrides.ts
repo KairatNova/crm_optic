@@ -41,5 +41,5 @@ export function applyLandingOverrides(base: Dictionary, payload: Record<string, 
       ctaPhone: str(contactIn.ctaPhone) ?? base.contact.ctaPhone,
       ctaRoute: str(contactIn.ctaRoute) ?? base.contact.ctaRoute,
     },
-  };
+  } as Dictionary;
 }

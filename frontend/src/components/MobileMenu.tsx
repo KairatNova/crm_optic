@@ -9,7 +9,7 @@ export function MobileMenu({
   labels,
 }: {
   locale: Locale;
-  labels: { menu: string; about: string; services: string; shop: string; booking: string; crm: string };
+  labels: { menu: string; about: string; services: string; booking: string; crm: string };
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -39,7 +39,6 @@ export function MobileMenu({
             {[
               { id: "about", label: labels.about },
               { id: "services", label: labels.services },
-              { id: "shop", label: labels.shop },
               { id: "booking", label: labels.booking },
             ].map((x) => (
               <a
@@ -62,7 +61,7 @@ export function MobileMenu({
         </div>
       </div>
     );
-  }, [labels.about, labels.booking, labels.crm, labels.menu, labels.services, labels.shop, locale, open]);
+  }, [labels.about, labels.booking, labels.crm, labels.menu, labels.services, locale, open]);
 
   return (
     <>

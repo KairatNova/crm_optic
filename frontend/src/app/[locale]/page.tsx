@@ -56,9 +56,6 @@ export default async function Home({
             <a className="hover:text-zinc-950" href={`/${locale}/#services`}>
               {t.nav.services}
             </a>
-            <a className="hover:text-zinc-950" href={`/${locale}/#shop`}>
-              {t.nav.shop}
-            </a>
             <a className="font-semibold text-[#11766E] hover:text-[#0f5f59]" href={`/${locale}/crm/login`}>
               {t.nav.crm}
             </a>
@@ -84,7 +81,6 @@ export default async function Home({
                 menu: t.mobile.menu,
                 about: t.nav.about,
                 services: t.nav.services,
-                shop: t.nav.shop,
                 booking: t.nav.booking,
                 crm: t.nav.crm,
               }}
@@ -112,16 +108,16 @@ export default async function Home({
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <a
-                  href={`/${locale}/#shop`}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50"
-                >
-                  {t.hero.ctaCatalog}
-                </a>
-                <a
                   href={`/${locale}/#booking`}
                   className="inline-flex h-11 items-center justify-center rounded-full bg-[#14B8A6] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#11766E]"
                 >
                   {t.hero.ctaBooking}
+                </a>
+                <a
+                  href={`/${locale}/#services`}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50"
+                >
+                  {t.hero.ctaServices}
                 </a>
               </div>
 
@@ -180,45 +176,6 @@ export default async function Home({
                 <p className="mt-2 text-sm leading-6 text-zinc-600">{item.text}</p>
               </article>
             ))}
-          </div>
-        </section>
-
-        <section id="shop" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.popular.title}</h2>
-              <p className="mt-2 text-sm text-zinc-600">{t.popular.subtitle}</p>
-            </div>
-            <a className="hidden text-sm font-semibold text-[#11766E] hover:text-[#0f5f59] sm:block" href={`/${locale}/#booking`}>
-              {t.nav.booking} →
-            </a>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {t.popular.items.map((item, idx) => {
-              const photo = landingDemoPhotos.popular[idx % landingDemoPhotos.popular.length];
-              return (
-                <div
-                  key={item.name}
-                  className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100">
-                    <Image
-                      src={photo.src}
-                      alt={photo.alt}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    />
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-sm font-semibold">{item.name}</div>
-                    <div className="text-xs text-zinc-500">Brand</div>
-                    <div className="mt-1 text-sm font-bold text-zinc-900">{item.price}</div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </section>
 

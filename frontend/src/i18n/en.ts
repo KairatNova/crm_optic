@@ -4,7 +4,6 @@ export const en = {
   nav: {
     about: "About",
     services: "Services",
-    shop: "Store",
     booking: "Book",
     crm: "Login",
   },
@@ -15,8 +14,8 @@ export const en = {
     title2: "Flawless style.",
     subtitle:
       "Professional eye exam, glasses selection, and care for your eyes. Book a visit online in just a couple of minutes.",
-    ctaCatalog: "Browse frames",
     ctaBooking: "Book an eye exam",
+    ctaServices: "Services",
     pills: ["Quick check", "Frames fitting", "Contact lenses"],
     stats: [
       { k: "Time", v: "~15 min" },
@@ -40,16 +39,6 @@ export const en = {
         title: "Reliable service",
         text: "Frame adjustment, minor repairs, and support after purchase.",
       },
-    ],
-  },
-  popular: {
-    title: "Popular frames",
-    subtitle: "Fit by face shape, style, and prescription. Prices/models are examples.",
-    items: [
-      { name: "Neon Optika", price: "3,790 ₽" },
-      { name: "Bantachita", price: "3,790 ₽" },
-      { name: "Gorten Frames", price: "3,780 ₽" },
-      { name: "Katon", price: "2,280 ₽" },
     ],
   },
   services: {
