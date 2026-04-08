@@ -154,7 +154,6 @@ export default async function Home({
                   ))}
                 </div>
               </div>
-              <div className="mt-3 text-xs text-zinc-500">{t.hero.note}</div>
             </div>
           </div>
         </section>
@@ -238,7 +237,6 @@ export default async function Home({
               <h3 className="text-lg font-bold text-zinc-900">{t.contact.title}</h3>
               <p className="mt-2 text-sm text-zinc-700">{t.contact.address}</p>
               <p className="mt-1 text-sm text-zinc-700">{t.contact.hours}</p>
-              <p className="mt-3 text-xs text-zinc-500">{t.contact.mapHint}</p>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
               <div className="text-sm font-semibold text-zinc-900">{t.city}</div>
@@ -256,6 +254,22 @@ export default async function Home({
                   rel="noreferrer"
                 >
                   {t.contact.ctaRoute}
+                </a>
+                <a
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                  href={t.contact.instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t.contact.ctaInstagram}
+                </a>
+                <a
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                  href={t.contact.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t.contact.ctaWhatsapp}
                 </a>
               </div>
             </div>

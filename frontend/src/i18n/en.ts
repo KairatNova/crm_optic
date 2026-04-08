@@ -1,20 +1,20 @@
 export const en = {
   brand: "Optic Center",
-  city: "Yessentuki",
+  city: "Bishkek",
   nav: {
     about: "About",
     services: "Services",
     booking: "Book",
     crm: "Login",
   },
-  phone: "+996 000 123 456",
+  phone: "+996 706 90 59 04",
   hero: {
-    badge: "Optic stores network",
+    badge: "Optics at Asia Mall",
     title1: "Perfect vision.",
     title2: "Flawless style.",
     subtitle:
       "Professional eye exam, glasses selection, and care for your eyes. Book a visit online in just a couple of minutes.",
-    ctaBooking: "Book an eye exam",
+    ctaBooking: "Book now",
     ctaServices: "Services",
     pills: ["Quick check", "Frames fitting", "Contact lenses"],
     stats: [
@@ -22,7 +22,6 @@ export const en = {
       { k: "Warranty", v: "for frames" },
       { k: "Fit", v: "by face shape" },
     ],
-    note: "Placeholder image. Replace with a real photo of the shop/specialist.",
   },
   highlights: {
     title: "Why clients choose us",
@@ -36,14 +35,14 @@ export const en = {
         text: "Diagnosis and consultation in one place, without extra visits and queues.",
       },
       {
-        title: "Reliable service",
-        text: "Frame adjustment, minor repairs, and support after purchase.",
+        title: "Service & support",
+        text: "Frame adjustment, minor repairs, and help after purchase.",
       },
     ],
   },
   services: {
     title: "Services",
-    subtitle: "Pick a service — we’ll tell what’s included and help you book.",
+    subtitle: "Pick a service — we'll tell what's included and help you book.",
     items: [
       {
         title: "Eye exam",
@@ -51,7 +50,7 @@ export const en = {
       },
       {
         title: "Frames & lenses fitting",
-        text: "We’ll match frames to your face and lenses to your prescription, lifestyle, and budget.",
+        text: "We'll match frames to your face and lenses to your prescription, lifestyle, and budget.",
       },
       {
         title: "Contact lenses",
@@ -65,8 +64,8 @@ export const en = {
   },
   booking: {
     title: "Online booking",
-    subtitle: "Next step: connect this form to the booking API.",
-    badges: ["Phone confirmation", "Status: new"],
+    subtitle: "Leave a request — we'll call back to confirm the time.",
+    badges: ["Phone confirmation", "Every day 10:00–22:00"],
     form: {
       name: "Name",
       phone: "Phone",
@@ -75,7 +74,7 @@ export const en = {
       time: "Time",
       comment: "Comment",
       submit: "Book now",
-      consent: "By clicking “Book now”, you consent to personal data processing.",
+      consent: "By clicking «Book now», you consent to personal data processing.",
       serviceOptions: ["Eye exam", "Frames & lenses fitting", "Contact lenses", "Service & repair"],
       placeholders: {
         name: "Ivan",
@@ -86,11 +85,15 @@ export const en = {
   },
   contact: {
     title: "Contacts and hours",
-    address: "17 Internationalnaya St, Yessentuki",
-    hours: "Mon-Sat: 09:00-19:00, Sun: 10:00-17:00",
-    mapHint: "Add an interactive map (Google Maps / 2GIS) in the next iteration.",
+    address: "Asia Mall, -1 floor, Chyngyz Aitmatov Ave 3, Bishkek, 720044",
+    hours: "Every day: 10:00–22:00",
     ctaPhone: "Call us",
     ctaRoute: "Get directions",
+    ctaInstagram: "Instagram",
+    ctaWhatsapp: "WhatsApp",
+    instagramUrl: "https://www.instagram.com/center_optics.kg",
+    whatsappUrl:
+      "https://api.whatsapp.com/send/?phone=996706905904&text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21+%D0%9F%D0%B8%D1%88%D1%83+%D1%81+%D1%81%D0%B0%D0%B9%D1%82%D0%B0.&type=phone_number&app_absent=0",
   },
   mobile: {
     stickyCta: "Book",
@@ -103,4 +106,3 @@ export const en = {
     en: "English",
   },
 } as const;
-
