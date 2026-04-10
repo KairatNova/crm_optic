@@ -87,8 +87,12 @@ export const en = {
     title: "Contacts and hours",
     address: "Asia Mall, -1 floor, Chyngyz Aitmatov Ave 3, Bishkek, 720044",
     hours: "Every day: 10:00–22:00",
+    routeHint:
+      "Directions: maps open in the browser or app. 2GIS searches for the «Центр оптики» shop in Asia Mall; Google Maps uses the full address.",
+    twoGisSearchQuery: "Центр оптики Asia Mall Бишкек",
     ctaPhone: "Call us",
-    ctaRoute: "Get directions",
+    ctaRouteGoogle: "Google Maps",
+    ctaRoute2gis: "2GIS",
     ctaInstagram: "Instagram",
     ctaWhatsapp: "WhatsApp",
     instagramUrl: "https://www.instagram.com/center_optics.kg",

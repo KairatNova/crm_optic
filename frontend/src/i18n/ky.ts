@@ -87,8 +87,12 @@ export const ky = {
     title: "Байланыш жана иш убактысы",
     address: "Asia Mall, -1 кабат, Чыңгыз Айтматов проспекти, 3, Бишкек, 720044",
     hours: "Күн сайын: 10:00–22:00",
+    routeHint:
+      "Маршрут: карталар браузер же колдонмодо ачылат. 2GIS «Центр оптики» + Asia Mall боюнча издейт; Google — толук дарек боюнча.",
+    twoGisSearchQuery: "Центр оптики Asia Mall Бишкек",
     ctaPhone: "Чалуу",
-    ctaRoute: "Маршрут түзүү",
+    ctaRouteGoogle: "Google Карталар",
+    ctaRoute2gis: "2GIS",
     ctaInstagram: "Instagram",
     ctaWhatsapp: "WhatsApp",
     instagramUrl: "https://www.instagram.com/center_optics.kg",

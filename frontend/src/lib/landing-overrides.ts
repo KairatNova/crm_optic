@@ -37,9 +37,16 @@ export function applyLandingOverrides(base: Dictionary, payload: Record<string, 
       title: str(contactIn.title) ?? base.contact.title,
       address: str(contactIn.address) ?? base.contact.address,
       hours: str(contactIn.hours) ?? base.contact.hours,
-      mapHint: str(contactIn.mapHint) ?? base.contact.mapHint,
+      routeHint: str(contactIn.routeHint) ?? base.contact.routeHint,
+      twoGisSearchQuery: str(contactIn.twoGisSearchQuery) ?? base.contact.twoGisSearchQuery,
       ctaPhone: str(contactIn.ctaPhone) ?? base.contact.ctaPhone,
-      ctaRoute: str(contactIn.ctaRoute) ?? base.contact.ctaRoute,
+      ctaRouteGoogle:
+        str(contactIn.ctaRouteGoogle) ?? str(contactIn.ctaRoute) ?? base.contact.ctaRouteGoogle,
+      ctaRoute2gis: str(contactIn.ctaRoute2gis) ?? base.contact.ctaRoute2gis,
+      ctaInstagram: str(contactIn.ctaInstagram) ?? base.contact.ctaInstagram,
+      ctaWhatsapp: str(contactIn.ctaWhatsapp) ?? base.contact.ctaWhatsapp,
+      instagramUrl: str(contactIn.instagramUrl) ?? base.contact.instagramUrl,
+      whatsappUrl: str(contactIn.whatsappUrl) ?? base.contact.whatsappUrl,
     },
   } as Dictionary;
 }

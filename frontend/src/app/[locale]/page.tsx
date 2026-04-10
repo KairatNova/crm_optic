@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BookingForm } from "@/components/BookingForm";
 import { MobileMenu } from "@/components/MobileMenu";
 import { BrandLogo } from "@/components/BrandLogo";
+import { LandingContactSection } from "@/components/landing/LandingContactSection";
 import { getDictionary } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 import { applyLandingOverrides } from "@/lib/landing-overrides";
@@ -231,50 +232,24 @@ export default async function Home({
           </div>
         </section>
 
-        <section className="bg-white">
-          <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-10 sm:px-6 sm:pb-14 lg:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 lg:col-span-2">
-              <h3 className="text-lg font-bold text-zinc-900">{t.contact.title}</h3>
-              <p className="mt-2 text-sm text-zinc-700">{t.contact.address}</p>
-              <p className="mt-1 text-sm text-zinc-700">{t.contact.hours}</p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="text-sm font-semibold text-zinc-900">{t.city}</div>
-              <div className="mt-3 grid gap-2">
-                <a
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-[#14B8A6] px-4 text-sm font-semibold text-white hover:bg-[#11766E]"
-                  href={`tel:${t.phone.replace(/[^\d+]/g, "")}`}
-                >
-                  {t.contact.ctaPhone}
-                </a>
-                <a
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.contact.address)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t.contact.ctaRoute}
-                </a>
-                <a
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-                  href={t.contact.instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t.contact.ctaInstagram}
-                </a>
-                <a
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-                  href={t.contact.whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t.contact.ctaWhatsapp}
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
+        <LandingContactSection
+          title={t.contact.title}
+          address={t.contact.address}
+          hours={t.contact.hours}
+          routeHint={t.contact.routeHint}
+          city={t.city}
+          phoneDisplay={t.phone}
+          telHref={`tel:${t.phone.replace(/[^\d+]/g, "")}`}
+          ctaPhone={t.contact.ctaPhone}
+          ctaRouteGoogle={t.contact.ctaRouteGoogle}
+          ctaRoute2gis={t.contact.ctaRoute2gis}
+          ctaInstagram={t.contact.ctaInstagram}
+          ctaWhatsapp={t.contact.ctaWhatsapp}
+          googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.contact.address)}`}
+          twoGisUrl={`https://2gis.kg/bishkek/search/${encodeURIComponent(t.contact.twoGisSearchQuery)}`}
+          instagramUrl={t.contact.instagramUrl}
+          whatsappUrl={t.contact.whatsappUrl}
+        />
 
         <footer className="border-t border-zinc-200 bg-white">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">

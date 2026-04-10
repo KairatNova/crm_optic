@@ -87,8 +87,13 @@ export const ru = {
     title: "Контакты и график",
     address: "ТРЦ Asia Mall, -1 этаж, просп. Чынгыза Айтматова, 3, Бишкек, 720044",
     hours: "Ежедневно: 10:00–22:00",
+    routeHint:
+      "Маршрут: карты откроются в браузере или приложении. В 2GIS поиск сразу по «Центр оптики» в Asia Mall; в Google — по полному адресу.",
+    /** Запрос для 2GIS: сразу ищет организацию, а не только улицу */
+    twoGisSearchQuery: "Центр оптики Asia Mall Бишкек",
     ctaPhone: "Позвонить",
-    ctaRoute: "Построить маршрут",
+    ctaRouteGoogle: "Google Карты",
+    ctaRoute2gis: "2GIS",
     ctaInstagram: "Instagram",
     ctaWhatsapp: "WhatsApp",
     instagramUrl: "https://www.instagram.com/center_optics.kg",
