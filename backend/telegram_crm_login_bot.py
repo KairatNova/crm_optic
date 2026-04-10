@@ -15,6 +15,19 @@ def _telegram_api_base() -> str:
     return "https://api.telegram.org"
 
 
+def _httpx_network_hint(exc: BaseException) -> str:
+    """Windows 11001 / getaddrinfo failed — чаще всего DNS или нет сети, не «неверный токен»."""
+    text = f"{exc!s} {exc.__cause__!s}".lower()
+    if "getaddrinfo" in text or "11001" in text:
+        return (
+            "Не удаётся разрешить имя хоста (DNS) или нет сети. Проверьте интернет, "
+            "команду `ping api.telegram.org`, VPN/файрвол; при необходимости уберите HTTP_PROXY/HTTPS_PROXY из окружения."
+        )
+    if isinstance(exc, httpx.ConnectError) and exc.__cause__ is not None:
+        return f"Сеть: {exc.__cause__!s}. Проверьте доступ к https://api.telegram.org"
+    return "Проверьте интернет и настройки сети."
+
+
 def _read_backend_api_base() -> str:
     # Явный URL API (удобно для Docker / удалённого сервера). Иначе — localhost + BACKEND_PORT.
     explicit = os.getenv("BACKEND_API_BASE_URL", "").strip()
@@ -73,11 +86,23 @@ async def main() -> None:
     if settings.telegram_bot_webhook_secret:
         headers_for_backend["X-Bot-Secret"] = settings.telegram_bot_webhook_secret
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    # trust_env=False — чтобы сломанные HTTP(S)_PROXY в окружении не ломали резолвинг api.telegram.org
+    async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
         try:
             await _delete_webhook_if_set(client, telegram_api, bot_token)
+        except httpx.ConnectError as e:
+            logger.error(
+                "Не достучаться до Telegram API (%s). %s",
+                telegram_api,
+                _httpx_network_hint(e),
+            )
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "getWebhookInfo HTTP %s — часто неверный TELEGRAM_BOT_TOKEN или лимит Telegram",
+                e.response.status_code,
+            )
         except Exception:
-            logger.exception("getWebhookInfo/deleteWebhook failed (проверьте TELEGRAM_BOT_TOKEN)")
+            logger.exception("getWebhookInfo/deleteWebhook failed")
 
         while True:
             try:
@@ -181,6 +206,12 @@ async def main() -> None:
 
                     await _send_user_text(client, telegram_api, bot_token, chat_id, message_to_user)
 
+            except httpx.ConnectError as e:
+                logger.error(
+                    "getUpdates: нет связи с Telegram. %s Повтор через 10 с.",
+                    _httpx_network_hint(e),
+                )
+                await asyncio.sleep(10)
             except Exception:
                 logger.exception("poll loop error")
                 await asyncio.sleep(2)
