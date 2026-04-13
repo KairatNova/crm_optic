@@ -1,12 +1,15 @@
 /**
- * Временные демо-фото для лендинга (Unsplash License — замените на свои для продакшена).
- * https://unsplash.com/license
- *
- * Источники (для замены): UsALNdok2m4, 1511499767150, e8TtkC5xyv4, w7ZyuGYNpRQ, 4hH8MJBQYYE.
+ * Локальные фото лендинга (лежат в `frontend/public/landing/`).
+ * Hero: обработанный кадр витрины с оправами (~4:3, 1400px по ширине).
  */
 export const landingDemoPhotos = {
   hero: {
-    src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1400&q=85&auto=format&fit=crop",
-    alt: "Консультация офтальмолога",
+    src: "/landing/hero-optic-display.png",
+    alt: "Витрина с оправами в салоне оптики",
+  },
+  /** Фасад «Центр оптики» в блоке онлайн-записи */
+  bookingStorefront: {
+    src: "/landing/booking-storefront.png",
+    alt: "Салон «Центр оптики» — вход и витрина",
   },
 } as const;

@@ -141,8 +141,7 @@ export default async function Home({
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
-                <div className="absolute inset-0 bg-[radial-gradient(260px_260px_at_25%_35%,rgba(35,211,238,0.18),transparent_55%),radial-gradient(240px_240px_at_80%_25%,rgba(20,184,166,0.12),transparent_60%)]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent" />
                 <div className="absolute left-4 right-4 top-4 rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm backdrop-blur sm:left-6 sm:right-6 sm:p-4">
                   <BrandLogo />
                 </div>
@@ -208,25 +207,38 @@ export default async function Home({
 
         <section id="booking" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm sm:p-10">
-            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.booking.title}</h2>
-                <p className="mt-2 text-sm text-zinc-600">{t.booking.subtitle}</p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
-                  {t.booking.badges.map((b) => (
-                    <span key={b} className="rounded-full bg-white px-3 py-1 shadow-sm">
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <BookingForm
-                  apiBaseUrl={apiBaseUrl}
-                  labels={t.booking.form}
-                  serviceOptions={t.booking.form.serviceOptions}
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-10">
+              <figure className="relative order-1 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm aspect-[3/4] max-h-[min(72dvh,680px)] lg:order-none lg:max-h-none lg:aspect-auto lg:min-h-[22rem] lg:h-full">
+                <Image
+                  src={landingDemoPhotos.bookingStorefront.src}
+                  alt={landingDemoPhotos.bookingStorefront.alt}
+                  fill
+                  className="object-cover object-[center_14%]"
+                  sizes="(max-width: 1023px) min(92vw, 36rem) 50vw"
+                  loading="lazy"
                 />
+              </figure>
+
+              <div className="order-2 flex min-h-0 flex-col gap-6 lg:order-none lg:justify-center">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.booking.title}</h2>
+                  <p className="mt-2 text-sm text-zinc-600">{t.booking.subtitle}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
+                    {t.booking.badges.map((b) => (
+                      <span key={b} className="rounded-full bg-white px-3 py-1 shadow-sm">
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <BookingForm
+                    apiBaseUrl={apiBaseUrl}
+                    labels={t.booking.form}
+                    serviceOptions={t.booking.form.serviceOptions}
+                  />
+                </div>
               </div>
             </div>
           </div>
