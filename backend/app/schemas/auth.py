@@ -39,6 +39,7 @@ class LoginRequestOut(BaseModel):
 class TelegramStartIn(BaseModel):
     start_token: str
     chat_id: int
+    telegram_id: int
     telegram_username: str | None = None
 
 

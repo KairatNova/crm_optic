@@ -33,6 +33,13 @@ from app.schemas.auth import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _is_expired(expires_at) -> bool:
+    now = utcnow()
+    if getattr(expires_at, "tzinfo", None) is None:
+        return expires_at < now.replace(tzinfo=None)
+    return expires_at < now
+
+
 @router.get("/me", response_model=AuthUserRead)
 async def me(current: User = Depends(get_current_user)) -> AuthUserRead:
     return AuthUserRead(
@@ -110,16 +117,28 @@ async def telegram_start(
 
     result = await db.execute(select(TelegramPendingLink).where(TelegramPendingLink.start_token == payload.start_token))
     pending = result.scalar_one_or_none()
-    if pending is None or pending.used_at is not None or pending.expires_at < utcnow():
+    if pending is None or pending.used_at is not None or _is_expired(pending.expires_at):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired start token")
 
     user = await db.get(User, pending.user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    # Link Telegram chat to the user.
+    incoming_username = normalize_username(payload.telegram_username)
+    if user.telegram_id is not None and int(user.telegram_id) != int(payload.telegram_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This Telegram account is not linked to this CRM user",
+        )
+
+    # First successful login binds the Telegram account to the CRM user.
+    if user.telegram_id is None:
+        user.telegram_id = payload.telegram_id
+
+    # Keep/update visible Telegram metadata.
     user.telegram_chat_id = payload.chat_id
-    user.telegram_username = normalize_username(payload.telegram_username)
+    if incoming_username:
+        user.telegram_username = incoming_username
     pending.used_at = utcnow()
 
     code = generate_6_digit_code()
@@ -157,7 +176,7 @@ async def login_verify(payload: LoginVerifyIn, db: AsyncSession = Depends(get_db
         .limit(1)
     )
     code_row = result_code.scalar_one_or_none()
-    if code_row is None or code_row.expires_at < utcnow():
+    if code_row is None or _is_expired(code_row.expires_at):
         raise generic_error
 
     if code_row.attempts >= settings.verification_max_attempts:

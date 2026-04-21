@@ -24,11 +24,13 @@
 
 - бот получает `start_token` и вызывает:
   - `POST /auth/telegram/start`
-  - body: `start_token`, `chat_id`, `telegram_username`
+  - body: `start_token`, `chat_id`, `telegram_id`, `telegram_username`
   - header (опционально): `X-Bot-Secret`
 - backend:
   - валидирует токен и срок
-  - привязывает `telegram_chat_id` к пользователю
+  - сверяет `telegram_id` с привязанным аккаунтом пользователя (если уже привязан)
+  - при первом успешном входе привязывает `telegram_id` к пользователю
+  - обновляет `telegram_chat_id`
   - генерирует 6-значный код входа (TTL 5-10 минут)
   - возвращает текст для отправки пользователю: `"Your login code: 123456..."`
 
@@ -56,14 +58,10 @@
 В репозитории: **`backend/telegram_crm_login_bot.py`**.
 
 1. В `.env` (корень или `backend/`): **`TELEGRAM_BOT_TOKEN`**, при необходимости **`TELEGRAM_BOT_WEBHOOK_SECRET`** (тот же секрет проверяется в **`POST /auth/telegram/start`** заголовком `X-Bot-Secret`).
-2. API должен быть доступен с машины, где крутится бот. По умолчанию бот стучится в **`http://127.0.0.1:<BACKEND_PORT>`** (`BACKEND_PORT` по умолчанию `8000`). Для удалённого API задайте **`BACKEND_API_BASE_URL`** (без завершающего `/`).
-3. Из каталога `backend/` с установленными зависимостями:
+2. При старте FastAPI бот запускается автоматически в фоне (в том же сервисе/process), если заданы `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_AUTOSTART=true`.
+3. Скрипт `python telegram_crm_login_bot.py` можно использовать только для ручной отладки.
 
-```bash
-python telegram_crm_login_bot.py
-```
-
-В лог пишутся старт (URL API) и предупреждения, если backend отвечает 4xx/5xx на `auth/telegram/start`. В production обычно используют **systemd**, **Docker** или webhook вместо polling.
+В лог пишутся старт (URL API) и предупреждения, если backend отвечает 4xx/5xx на `auth/telegram/start`.
 
 ## ENV переменные
 
@@ -74,6 +72,7 @@ python telegram_crm_login_bot.py
 - `VERIFICATION_MAX_ATTEMPTS`
 - `TELEGRAM_BOT_USERNAME`
 - `TELEGRAM_BOT_WEBHOOK_SECRET` (если хотите защищать endpoint бота)
+- `TELEGRAM_BOT_AUTOSTART` (по умолчанию `true`)
 - `CORS_ORIGINS`
 
 ## Безопасность (внедрено)

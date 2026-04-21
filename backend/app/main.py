@@ -1,3 +1,7 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,12 +20,41 @@ from app.api.routers.visits import router as visits_router
 from app.api.routers.vision_tests import router as vision_tests_router
 from app.api.routers.visit_and_vision import router as visit_and_vision_router
 from app.core.config import get_settings
+from telegram_crm_login_bot import run_bot_polling
 
 _crm_deps = [Depends(get_current_user)]
+logger = logging.getLogger("app.main")
+
+
+@asynccontextmanager
+async def _app_lifespan(_: FastAPI):
+    settings = get_settings()
+    bot_task: asyncio.Task[None] | None = None
+    bot_stop_event: asyncio.Event | None = None
+
+    if settings.telegram_bot_token and settings.telegram_bot_autostart:
+        bot_stop_event = asyncio.Event()
+        bot_task = asyncio.create_task(run_bot_polling(bot_stop_event), name="telegram-crm-login-bot")
+        logger.info("Telegram bot polling started in API process")
+
+    try:
+        yield
+    finally:
+        if bot_task is None or bot_stop_event is None:
+            return
+        bot_stop_event.set()
+        try:
+            await asyncio.wait_for(bot_task, timeout=5)
+        except asyncio.TimeoutError:
+            bot_task.cancel()
+            try:
+                await bot_task
+            except asyncio.CancelledError:
+                pass
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="CRM Optic API", version="0.1.0")
+    app = FastAPI(title="CRM Optic API", version="0.1.0", lifespan=_app_lifespan)
     settings = get_settings()
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
     app.add_middleware(

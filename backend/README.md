@@ -54,14 +54,10 @@ python -m venv .venv
 
 ## Telegram-бот (long polling)
 
-Скрипт **`telegram_crm_login_bot.py`** читает `getUpdates`, на `/start <token>` вызывает **`POST /auth/telegram/start`** и отправляет пользователю код.
+Бот запускается **вместе с FastAPI** в том же процессе, если в `.env` задан **`TELEGRAM_BOT_TOKEN`** и не отключён **`TELEGRAM_BOT_AUTOSTART`**. Это позволяет деплоить API и бота как один сервис (Railway/Render и т.п.).
 
-Запуск (из `backend/`, venv активен, в `.env` задан **`TELEGRAM_BOT_TOKEN`**):
-
-```bash
-python telegram_crm_login_bot.py
-```
+Локально отдельно запускать `telegram_crm_login_bot.py` обычно не нужно. Скрипт оставлен для отладки и ручного запуска.
 
 Если API на другом хосте/порту, задайте **`BACKEND_API_BASE_URL`** (например `https://api.example.com`). Иначе используется `http://127.0.0.1:<BACKEND_PORT>`.
 
-**Код не приходит в Telegram:** убедитесь, что **`telegram_crm_login_bot.py` запущен** параллельно с API. Если у бота когда‑то включали **webhook**, long polling не получает апдейты — при старте скрипт теперь снимает webhook автоматически. Проверьте также **`TELEGRAM_BOT_WEBHOOK_SECRET`**: если задан в `.env` у API, тот же секрет должен уходить с ботом (скрипт подставляет заголовок сам).
+**Код не приходит в Telegram:** проверьте, что в окружении API есть `TELEGRAM_BOT_TOKEN`, что процесс API запущен, и что у бота корректный `TELEGRAM_BOT_WEBHOOK_SECRET` (если используется). При старте polling-бот автоматически снимает активный webhook.

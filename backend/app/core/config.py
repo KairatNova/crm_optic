@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     verification_max_attempts: int = Field(default=5, alias="VERIFICATION_MAX_ATTEMPTS")
     telegram_bot_username: str = Field(default="", alias="TELEGRAM_BOT_USERNAME")
     telegram_bot_webhook_secret: str = Field(default="", alias="TELEGRAM_BOT_WEBHOOK_SECRET")
+    telegram_bot_autostart: bool = Field(default=True, alias="TELEGRAM_BOT_AUTOSTART")
     telegram_bootstrap_owner_telegram_id: int | None = Field(
         default=None,
         alias="TELEGRAM_BOOTSTRAP_OWNER_TELEGRAM_ID",

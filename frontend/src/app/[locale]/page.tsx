@@ -205,10 +205,14 @@ export default async function Home({
           </div>
         </section>
 
-        <section id="booking" className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+        <section
+          id="booking"
+          className="scroll-mt-20 mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 sm:scroll-mt-24"
+        >
           <div className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm sm:p-10">
             <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-10">
-              <figure className="relative order-1 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm aspect-[3/4] max-h-[min(72dvh,680px)] lg:order-none lg:max-h-none lg:aspect-auto lg:min-h-[22rem] lg:h-full">
+              {/* Mobile: форма сверху (якорь #booking), desktop: фото слева */}
+              <figure className="relative order-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm aspect-[3/4] max-h-[min(72dvh,680px)] lg:order-1 lg:max-h-none lg:aspect-auto lg:min-h-[22rem] lg:h-full">
                 <Image
                   src={landingDemoPhotos.bookingStorefront.src}
                   alt={landingDemoPhotos.bookingStorefront.alt}
@@ -219,7 +223,7 @@ export default async function Home({
                 />
               </figure>
 
-              <div className="order-2 flex min-h-0 flex-col gap-6 lg:order-none lg:justify-center">
+              <div className="order-1 flex min-h-0 flex-col gap-6 lg:order-2 lg:justify-center">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.booking.title}</h2>
                   <p className="mt-2 text-sm text-zinc-600">{t.booking.subtitle}</p>

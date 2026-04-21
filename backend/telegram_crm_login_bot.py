@@ -33,7 +33,7 @@ def _read_backend_api_base() -> str:
     explicit = os.getenv("BACKEND_API_BASE_URL", "").strip()
     if explicit:
         return explicit.rstrip("/")
-    port = os.getenv("BACKEND_PORT", "8000")
+    port = os.getenv("BACKEND_PORT") or os.getenv("PORT") or "8000"
     return f"http://127.0.0.1:{port}"
 
 
@@ -71,7 +71,7 @@ async def _send_user_text(
     )
 
 
-async def main() -> None:
+async def run_bot_polling(stop_event: asyncio.Event | None = None) -> None:
     settings = get_settings()
     if not settings.telegram_bot_token:
         raise SystemExit("TELEGRAM_BOT_TOKEN is missing")
@@ -104,7 +104,7 @@ async def main() -> None:
         except Exception:
             logger.exception("getWebhookInfo/deleteWebhook failed")
 
-        while True:
+        while not (stop_event and stop_event.is_set()):
             try:
                 r = await client.get(
                     f"{telegram_api}/bot{bot_token}/getUpdates",
@@ -129,9 +129,10 @@ async def main() -> None:
                     chat = message.get("chat") or {}
                     chat_id = chat.get("id")
                     from_user = message.get("from") or {}
+                    telegram_id = from_user.get("id")
                     telegram_username = from_user.get("username")
 
-                    if not isinstance(chat_id, int):
+                    if not isinstance(chat_id, int) or not isinstance(telegram_id, int):
                         continue
 
                     start_token = _start_token_from_text(text)
@@ -153,6 +154,7 @@ async def main() -> None:
                             json={
                                 "start_token": start_token,
                                 "chat_id": chat_id,
+                                "telegram_id": telegram_id,
                                 "telegram_username": telegram_username,
                             },
                             headers=headers_for_backend,
@@ -177,7 +179,16 @@ async def main() -> None:
                             body,
                         )
                         if start_resp.status_code == 403:
-                            user_msg = "Ошибка доступа к серверу (секрет бота). Проверьте TELEGRAM_BOT_WEBHOOK_SECRET в .env и заголовок у бота."
+                            if "not linked" in body.lower():
+                                user_msg = (
+                                    "Этот Telegram-аккаунт не привязан к пользователю CRM. "
+                                    "Обратитесь к владельцу системы для привязки."
+                                )
+                            else:
+                                user_msg = (
+                                    "Ошибка доступа к серверу (секрет бота). "
+                                    "Проверьте TELEGRAM_BOT_WEBHOOK_SECRET в .env и заголовок у бота."
+                                )
                         elif start_resp.status_code == 400:
                             user_msg = (
                                 "Ссылка входа устарела или уже использована. Вернитесь в CRM и запросите вход заново."
@@ -215,6 +226,10 @@ async def main() -> None:
             except Exception:
                 logger.exception("poll loop error")
                 await asyncio.sleep(2)
+
+
+async def main() -> None:
+    await run_bot_polling()
 
 
 if __name__ == "__main__":
