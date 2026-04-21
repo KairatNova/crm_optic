@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     )
     cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
+    owner_notify_enabled: bool = Field(default=True, alias="OWNER_NOTIFY_ENABLED")
+    owner_notify_email: str = Field(default="", alias="OWNER_NOTIFY_EMAIL")
+    smtp_host: str = Field(default="", alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_user: str = Field(default="", alias="SMTP_USER")
+    smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
+    smtp_from: str = Field(default="", alias="SMTP_FROM")
+    smtp_use_tls: bool = Field(default=True, alias="SMTP_USE_TLS")
+
     @field_validator("telegram_bootstrap_owner_telegram_id", mode="before")
     @classmethod
     def empty_bootstrap_id(cls, v: object) -> object:

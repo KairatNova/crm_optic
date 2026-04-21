@@ -30,6 +30,12 @@ async def test_clients_create_and_read(api_client, auth_headers):
     assert got["id"] == created["id"]
     assert got["email"] == payload["email"]
 
+    res_audit = await api_client.get(f"/clients/{created['id']}/audit", headers=auth_headers)
+    assert res_audit.status_code == 200
+    audit = res_audit.json()
+    assert len(audit) >= 1
+    assert audit[0]["field_name"] == "created"
+
 
 @pytest.mark.asyncio
 async def test_clients_lookup_by_phone(api_client, auth_headers):

@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
+from app.core.time import utc_now
 from app.models.base import Base
 
 
@@ -11,7 +10,7 @@ class VisionTest(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
-    tested_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    tested_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     od_sph = Column(String(16), nullable=True)
     od_cyl = Column(String(16), nullable=True)
     od_axis = Column(String(16), nullable=True)

@@ -10,7 +10,9 @@
 
 Postgres можно поднять через Docker или локально — задайте `DATABASE_URL` в `.env` (шаблон: **`.env.example`** в корне репозитория).
 
-Актуальные миграции включают в том числе **`0010_client_created_at`** и **`0011_landing_locale_content`**. Пока Postgres не запущен или БД не создана, `alembic upgrade` завершится ошибкой подключения — это нормально, сначала поднимите сервер БД.
+Актуальные миграции включают в том числе **`0011_landing_locale_content`**, **`0012_client_audit`**. Пока Postgres не запущен или БД не создана, `alembic upgrade` завершится ошибкой подключения — это нормально, сначала поднимите сервер БД.
+
+**Резервные копии БД:** см. **[`docs/DATABASE_BACKUPS.md`](../docs/DATABASE_BACKUPS.md)** (`pg_dump`, бэкапы на Railway/Render).
 
 **Создать БД вручную (если её ещё нет):** подключитесь к Postgres под суперпользователем и выполните `CREATE DATABASE crm_optic;`, затем выдайте права пользователю из `DATABASE_URL`.
 
@@ -43,6 +45,13 @@ python -m venv .venv
 - `GET /health`
 - Лендинг (без входа): `POST /public/booking`
 - Вход в CRM: `POST /auth/login-request` -> Telegram `/start` -> `POST /auth/login-verify`
+
+### Уведомления владельцу о записи с лендинга
+
+После успешного `POST /public/booking` в фоне отправляются уведомления (ошибки не влияют на ответ `201`):
+
+- **Telegram:** всем активным пользователям с `role=owner` и заполненным `telegram_chat_id` (после входа через CRM-бота), если заданы `TELEGRAM_BOT_TOKEN` и `OWNER_NOTIFY_ENABLED=true`.
+- **Email:** если заданы `SMTP_HOST`, учётные данные при необходимости и `OWNER_NOTIFY_EMAIL` (через запятую).
 
 ## CRM и Telegram (owner/admin flow)
 

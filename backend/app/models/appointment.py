@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
+from app.core.time import utc_now
 from app.models.base import Base
 
 
@@ -18,7 +17,7 @@ class Appointment(Base):
     cancellation_reason = Column(String(255), nullable=True)
     # landing — с сайта (публичная запись); crm — создано в CRM; NULL — старые данные
     source = Column(String(32), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     client = relationship("Client", backref="appointments")

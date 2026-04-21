@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -36,4 +36,16 @@ class ClientCardRead(BaseModel):
     client: ClientRead
     visits: list[VisitRead]
     vision_tests: list[VisionTestRead]
+
+
+class ClientAuditRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    client_id: int
+    user_id: int | None
+    field_name: str
+    old_value: str | None
+    new_value: str | None
+    created_at: datetime
 

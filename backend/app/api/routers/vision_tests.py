@@ -1,10 +1,9 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.core.time import utc_now
 from app.models.client import Client
 from app.models.vision_test import VisionTest
 from app.schemas.vision_test import VisionTestCreate, VisionTestPatch, VisionTestRead
@@ -35,7 +34,7 @@ async def create_vision_test(
 
     vt = VisionTest(
         client_id=client_id,
-        tested_at=payload.tested_at or datetime.utcnow(),
+        tested_at=payload.tested_at or utc_now(),
         od_sph=payload.od_sph,
         od_cyl=payload.od_cyl,
         od_axis=payload.od_axis,

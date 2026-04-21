@@ -27,7 +27,11 @@ def _audit_value(value: datetime | str | None) -> str | None:
 
 
 @router.post("", response_model=AppointmentRead, status_code=status.HTTP_201_CREATED)
-async def create_appointment(payload: AppointmentCreate, db: AsyncSession = Depends(get_db)) -> Appointment:
+async def create_appointment(
+    payload: AppointmentCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Appointment:
     # Minimal MVP validation: no past appointments.
     if payload.starts_at.tzinfo is None:
         starts_at = payload.starts_at.replace(tzinfo=timezone.utc)
@@ -57,6 +61,16 @@ async def create_appointment(payload: AppointmentCreate, db: AsyncSession = Depe
         source="crm",
     )
     db.add(appt)
+    await db.flush()
+    db.add(
+        AppointmentAudit(
+            appointment_id=appt.id,
+            user_id=user.id,
+            field_name="created",
+            old_value=None,
+            new_value="crm",
+        )
+    )
     await db.commit()
     await db.refresh(appt)
     return appt

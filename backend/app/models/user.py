@@ -1,7 +1,6 @@
-from datetime import datetime
-
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
 
+from app.core.time import utc_now
 from app.models.base import Base
 
 
@@ -20,6 +19,6 @@ class User(Base):
     role = Column(String(32), nullable=False, server_default="admin")  # owner|admin
     is_active = Column(Boolean, nullable=False, server_default="true")
     is_verified = Column(Boolean, nullable=False, server_default="false")
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
 

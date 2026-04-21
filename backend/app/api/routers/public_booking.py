@@ -2,16 +2,18 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.core.rate_limit import rate_limit_public_booking
 from app.models.appointment import Appointment
+from app.models.appointment_audit import AppointmentAudit
 from app.models.client import Client
 from app.schemas.appointment import AppointmentRead
 from app.schemas.public_booking import PublicBookingCreate
 from app.services.client_lookup import find_active_client_by_phone
+from app.services.owner_notifications import notify_new_landing_appointment
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -20,6 +22,7 @@ router = APIRouter(prefix="/public", tags=["public"])
 async def public_booking(
     request: Request,
     payload: PublicBookingCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> Appointment:
     rate_limit_public_booking(request)
@@ -53,6 +56,17 @@ async def public_booking(
         source="landing",
     )
     db.add(appt)
+    await db.flush()
+    db.add(
+        AppointmentAudit(
+            appointment_id=appt.id,
+            user_id=None,
+            field_name="created",
+            old_value=None,
+            new_value="landing",
+        )
+    )
     await db.commit()
     await db.refresh(appt)
+    background_tasks.add_task(notify_new_landing_appointment, appt.id)
     return appt

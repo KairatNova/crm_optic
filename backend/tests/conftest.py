@@ -14,6 +14,19 @@ if str(ROOT) not in sys.path:
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+
+# POST /public/booking планирует фоновые уведомления; SessionLocal там — глобальный engine,
+# не совпадает с sqlite из фикстуры. Отключаем уведомления в тестах.
+@pytest.fixture(autouse=True)
+def _disable_landing_owner_notifications(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def _noop(_appointment_id: int) -> None:
+        return None
+
+    monkeypatch.setattr(
+        "app.api.routers.public_booking.notify_new_landing_appointment",
+        _noop,
+        raising=True,
+    )
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.api import deps as api_deps
@@ -22,6 +35,7 @@ from app.core.jwt_tokens import create_access_token
 from app.main import create_app
 from app.models.appointment import Appointment
 from app.models.appointment_audit import AppointmentAudit  # noqa: F401
+from app.models.client_audit import ClientAudit  # noqa: F401
 from app.models.base import Base
 from app.models.client import Client
 from app.models.landing_locale_content import LandingLocaleContent  # noqa: F401

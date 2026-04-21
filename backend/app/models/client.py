@@ -1,7 +1,6 @@
-from datetime import datetime
-
 from sqlalchemy import Column, Date, DateTime, Integer, String
 
+from app.core.time import utc_now
 from app.models.base import Base
 
 
@@ -15,5 +14,5 @@ class Client(Base):
     gender = Column(String(16), nullable=True)
     birth_date = Column(Date, nullable=True)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 

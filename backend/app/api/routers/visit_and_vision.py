@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.core.time import utc_now
 from app.models.client import Client
 from app.models.visit import Visit
 from app.models.vision_test import VisionTest
@@ -27,13 +26,13 @@ async def create_visit_and_vision_test(
 
     visit = Visit(
         client_id=client_id,
-        visited_at=visit_payload.visited_at or datetime.utcnow(),
+        visited_at=visit_payload.visited_at or utc_now(),
         comment=visit_payload.comment,
     )
 
     vt = VisionTest(
         client_id=client_id,
-        tested_at=vision_payload.tested_at or datetime.utcnow(),
+        tested_at=vision_payload.tested_at or utc_now(),
         od_sph=vision_payload.od_sph,
         od_cyl=vision_payload.od_cyl,
         od_axis=vision_payload.od_axis,

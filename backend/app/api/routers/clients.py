@@ -1,22 +1,37 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.models.client import Client
+from app.models.client_audit import ClientAudit
+from app.models.user import User
 from app.models.vision_test import VisionTest
 from app.models.visit import Visit
+from app.schemas.client import ClientAuditRead, ClientCardRead, ClientCreate, ClientPatch, ClientRead
 from app.services.client_lookup import find_active_client_by_phone
-from app.schemas.client import ClientCardRead, ClientCreate, ClientPatch, ClientRead
-
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
+_CLIENT_AUDIT_FIELDS = ("name", "phone", "email", "gender", "birth_date")
+
+
+def _client_audit_value(value: datetime | date | str | None) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    return str(value)
+
 
 @router.post("", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
-async def create_client(payload: ClientCreate, db: AsyncSession = Depends(get_db)) -> Client:
+async def create_client(
+    payload: ClientCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Client:
     client = Client(
         name=payload.name,
         phone=payload.phone,
@@ -25,17 +40,41 @@ async def create_client(payload: ClientCreate, db: AsyncSession = Depends(get_db
         birth_date=payload.birth_date,
     )
     db.add(client)
+    await db.flush()
+    db.add(
+        ClientAudit(
+            client_id=client.id,
+            user_id=user.id,
+            field_name="created",
+            old_value=None,
+            new_value=f"name={client.name};phone={client.phone}",
+        )
+    )
     await db.commit()
     await db.refresh(client)
     return client
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def soft_delete_client(client_id: int, db: AsyncSession = Depends(get_db)) -> None:
+async def soft_delete_client(
+    client_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
     client = await db.get(Client, client_id)
     if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-    client.deleted_at = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc)
+    client.deleted_at = now
+    db.add(
+        ClientAudit(
+            client_id=client.id,
+            user_id=user.id,
+            field_name="deleted_at",
+            old_value=None,
+            new_value=now.isoformat(),
+        )
+    )
     await db.commit()
 
 
@@ -51,6 +90,21 @@ async def lookup_client_by_phone(phone: str = Query(..., min_length=2), db: Asyn
     if client is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     return client
+
+
+@router.get("/{client_id}/audit", response_model=list[ClientAuditRead])
+async def list_client_audit(
+    client_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> list[ClientAudit]:
+    client = await db.get(Client, client_id)
+    if client is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+
+    result = await db.execute(
+        select(ClientAudit).where(ClientAudit.client_id == client_id).order_by(ClientAudit.id.desc())
+    )
+    return list(result.scalars().all())
 
 
 @router.get("/{client_id}", response_model=ClientRead)
@@ -85,11 +139,14 @@ async def get_client_card(client_id: int, db: AsyncSession = Depends(get_db)) ->
 async def patch_client(
     client_id: int,
     payload: ClientPatch,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Client:
     client = await db.get(Client, client_id)
     if client is None or client.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+
+    old = {field: getattr(client, field) for field in _CLIENT_AUDIT_FIELDS}
 
     if payload.name is not None and payload.name.strip():
         client.name = payload.name.strip()
@@ -104,7 +161,20 @@ async def patch_client(
     if payload.birth_date is not None:
         client.birth_date = payload.birth_date
 
+    for field in _CLIENT_AUDIT_FIELDS:
+        prev = old[field]
+        new = getattr(client, field)
+        if prev != new:
+            db.add(
+                ClientAudit(
+                    client_id=client.id,
+                    user_id=user.id,
+                    field_name=field,
+                    old_value=_client_audit_value(prev),
+                    new_value=_client_audit_value(new),
+                )
+            )
+
     await db.commit()
     await db.refresh(client)
     return client
-

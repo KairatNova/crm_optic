@@ -1,7 +1,6 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 
+from app.core.time import utc_now
 from app.models.base import Base
 
 
@@ -13,6 +12,6 @@ class LoginVerificationCode(Base):
     code_hash = Column(String(255), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
     attempts = Column(Integer, nullable=False, server_default="0")
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     consumed_at = Column(DateTime(timezone=True), nullable=True, index=True)
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 type BookingPayload = {
   name: string;
@@ -90,6 +90,21 @@ export function BookingForm({
   apiBaseUrl: string;
 }) {
   const timeOptions = useMemo(() => generateAllowedTimes(), []);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useLayoutEffect(() => {
+    function focusBookingFirstField() {
+      if (typeof window === "undefined") return;
+      if (window.location.hash !== "#booking") return;
+      nameInputRef.current?.focus({ preventScroll: true });
+      const { pathname, search } = window.location;
+      window.history.replaceState(null, "", `${pathname}${search}`);
+    }
+    focusBookingFirstField();
+    window.addEventListener("hashchange", focusBookingFirstField);
+    return () => window.removeEventListener("hashchange", focusBookingFirstField);
+  }, []);
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [service, setService] = useState(serviceOptions[0] || "");
@@ -186,6 +201,7 @@ export function BookingForm({
         <label className="grid gap-1 text-sm">
           <span className="text-xs font-medium text-zinc-700">{labels.name}</span>
           <input
+            ref={nameInputRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
