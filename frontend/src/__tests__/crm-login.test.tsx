@@ -60,9 +60,9 @@ describe("CrmLoginPage", () => {
 
     render(<CrmLoginPage />);
 
-    await user.type(screen.getByPlaceholderText(/username или/), "admin");
+    await user.type(screen.getByRole("textbox", { name: /логин/i }), "admin");
     await user.type(screen.getByLabelText(/Пароль/i), "secretpass");
-    await user.click(screen.getByRole("button", { name: /Получить код в Telegram/i }));
+    await user.click(screen.getByRole("button", { name: /^Вход$/i }));
 
     await waitFor(() => {
       expect(authLoginRequest).toHaveBeenCalledWith({ login: "admin", password: "secretpass" });

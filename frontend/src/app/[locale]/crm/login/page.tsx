@@ -75,14 +75,8 @@ export default function CrmLoginPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-slate-100 p-4">
       <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-slate-900">Вход в CRM</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Для <strong>владельца</strong> и <strong>администраторов</strong>: логин (имя пользователя или телефон в формате{" "}
-          <code className="rounded bg-slate-100 px-1 text-xs">+996…</code>), пароль, затем код из Telegram-бота.
-        </p>
-
         {step === "credentials" ? (
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4">
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Логин</span>
               <input
@@ -90,7 +84,6 @@ export default function CrmLoginPage() {
                 autoComplete="username"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
-                placeholder="username или +996700123456"
                 className="h-11 rounded-xl border border-slate-300 px-3"
               />
             </label>
@@ -110,11 +103,11 @@ export default function CrmLoginPage() {
               onClick={() => void onRequestCode()}
               className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
             >
-              {loading ? "Отправляем…" : "Получить код в Telegram"}
+              {loading ? "Вход…" : "Вход"}
             </button>
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               {hintMessage ? <p className="whitespace-pre-wrap">{hintMessage}</p> : null}
               {telegramLink ? (
