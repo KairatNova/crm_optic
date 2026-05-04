@@ -102,6 +102,7 @@ export const en = {
   mobile: {
     stickyCta: "Book",
     menu: "Menu",
+    closeMenu: "Close",
   },
   lang: {
     label: "Language",

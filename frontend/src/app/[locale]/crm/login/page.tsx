@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import type { Locale } from "@/i18n/locales";
 import { authLoginRequest, authLoginVerify } from "@/lib/crm-api";
@@ -10,10 +11,32 @@ import { saveCrmSession } from "@/lib/crm-auth";
 
 type Step = "credentials" | "telegram";
 
+function LoginFormSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true" aria-label="Загрузка формы">
+      <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
+      <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
+      <div className="h-11 animate-pulse rounded-xl bg-teal-600/25" />
+    </div>
+  );
+}
+
 export default function CrmLoginPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
   const locale = (params.locale || "ru") as Locale;
+
+  const [fieldsMounted, setFieldsMounted] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const id = window.setTimeout(() => {
+      if (alive) setFieldsMounted(true);
+    }, 50);
+    return () => {
+      alive = false;
+      window.clearTimeout(id);
+    };
+  }, []);
 
   const [step, setStep] = useState<Step>("credentials");
   const [login, setLogin] = useState("");
@@ -28,7 +51,9 @@ export default function CrmLoginPage() {
     setError(null);
     setHintMessage(null);
     if (!login.trim() || !password) {
-      setError("Введите логин и пароль.");
+      const msg = "Введите логин и пароль.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setLoading(true);
@@ -39,7 +64,9 @@ export default function CrmLoginPage() {
       setStep("telegram");
       setCode("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось запросить код");
+      const msg = e instanceof Error ? e.message : "Не удалось запросить код";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -49,16 +76,20 @@ export default function CrmLoginPage() {
     setError(null);
     const trimmed = code.replace(/\s/g, "");
     if (!trimmed || trimmed.length !== 6) {
-      setError("Введите 6-значный код из Telegram.");
+      const msg = "Введите 6-значный код из Telegram.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setLoading(true);
     try {
       const token = await authLoginVerify({ login: login.trim(), verification_code: trimmed });
       saveCrmSession(token.access_token, token.user);
-      router.replace(`/${locale}/crm`);
+      router.replace("/ru/crm");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Неверный код или срок действия истёк");
+      const msg = e instanceof Error ? e.message : "Неверный код или срок действия истёк";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -75,8 +106,10 @@ export default function CrmLoginPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-slate-100 p-4">
       <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        {step === "credentials" ? (
-          <div className="space-y-4">
+        {!fieldsMounted ? (
+          <LoginFormSkeleton />
+        ) : step === "credentials" ? (
+          <div className="space-y-4" suppressHydrationWarning>
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Логин</span>
               <input
@@ -85,6 +118,7 @@ export default function CrmLoginPage() {
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 className="h-11 rounded-xl border border-slate-300 px-3"
+                suppressHydrationWarning
               />
             </label>
             <label className="grid gap-1 text-sm">
@@ -95,6 +129,7 @@ export default function CrmLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11 rounded-xl border border-slate-300 px-3"
+                suppressHydrationWarning
               />
             </label>
             <button
@@ -102,12 +137,13 @@ export default function CrmLoginPage() {
               disabled={loading}
               onClick={() => void onRequestCode()}
               className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
+              suppressHydrationWarning
             >
               {loading ? "Вход…" : "Вход"}
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4" suppressHydrationWarning>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               {hintMessage ? <p className="whitespace-pre-wrap">{hintMessage}</p> : null}
               {telegramLink ? (
@@ -132,6 +168,7 @@ export default function CrmLoginPage() {
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
                 className="h-11 rounded-xl border border-slate-300 px-3 font-mono text-lg tracking-widest"
+                suppressHydrationWarning
               />
             </label>
             <button
@@ -139,6 +176,7 @@ export default function CrmLoginPage() {
               disabled={loading}
               onClick={() => void onVerify()}
               className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-70"
+              suppressHydrationWarning
             >
               {loading ? "Проверяем…" : "Войти"}
             </button>
@@ -146,13 +184,14 @@ export default function CrmLoginPage() {
               type="button"
               onClick={onBackToCredentials}
               className="w-full rounded-xl border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              suppressHydrationWarning
             >
               Назад: другой логин или пароль
             </button>
           </div>
         )}
 
-        {error ? (
+        {fieldsMounted && error ? (
           <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{error}</div>
         ) : null}
 

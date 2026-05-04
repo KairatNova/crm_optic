@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 from typing import Any
@@ -35,6 +36,20 @@ def _read_backend_api_base() -> str:
         return explicit.rstrip("/")
     port = os.getenv("BACKEND_PORT") or os.getenv("PORT") or "8000"
     return f"http://127.0.0.1:{port}"
+
+
+def _detail_from_error_body(body: str) -> str | None:
+    """Текст поля `detail` из JSON ответа FastAPI (ошибка для пользователя)."""
+    try:
+        j = json.loads(body)
+    except Exception:
+        return None
+    if not isinstance(j, dict):
+        return None
+    d = j.get("detail")
+    if isinstance(d, str) and d.strip():
+        return d.strip()
+    return None
 
 
 def _start_token_from_text(text: str) -> str | None:
@@ -178,23 +193,23 @@ async def run_bot_polling(stop_event: asyncio.Event | None = None) -> None:
                             start_resp.status_code,
                             body,
                         )
+                        detail = _detail_from_error_body(body)
+                        bl = body.lower()
                         if start_resp.status_code == 403:
-                            if "not linked" in body.lower():
-                                user_msg = (
-                                    "Этот Telegram-аккаунт не привязан к пользователю CRM. "
-                                    "Обратитесь к владельцу системы для привязки."
-                                )
+                            if "not linked" in bl or "не привязан" in bl:
+                                user_msg = detail or "Этот Telegram-аккаунт не привязан к пользователю CRM."
                             else:
-                                user_msg = (
-                                    "Ошибка доступа к серверу (секрет бота). "
-                                    "Проверьте TELEGRAM_BOT_WEBHOOK_SECRET в .env и заголовок у бота."
-                                )
+                                user_msg = detail or "Ошибка доступа."
                         elif start_resp.status_code == 400:
                             user_msg = (
-                                "Ссылка входа устарела или уже использована. Вернитесь в CRM и запросите вход заново."
+                                detail
+                                or "Ссылка входа устарела или уже использована. Вернитесь в CRM и запросите вход заново."
                             )
                         else:
-                            user_msg = "Ошибка сервера при входе. Попробуйте снова через минуту или обратитесь к администратору."
+                            user_msg = (
+                                detail
+                                or "Ошибка сервера при входе. Попробуйте снова через минуту или обратитесь к администратору."
+                            )
                         await _send_user_text(client, telegram_api, bot_token, chat_id, user_msg)
                         continue
 

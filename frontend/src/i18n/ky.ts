@@ -102,6 +102,7 @@ export const ky = {
   mobile: {
     stickyCta: "Жазылуу",
     menu: "Меню",
+    closeMenu: "Жабуу",
   },
   lang: {
     label: "Тил",

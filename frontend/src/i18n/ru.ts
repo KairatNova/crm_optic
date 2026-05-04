@@ -103,6 +103,7 @@ export const ru = {
   mobile: {
     stickyCta: "Записаться",
     menu: "Меню",
+    closeMenu: "Закрыть",
   },
   lang: {
     label: "Язык",

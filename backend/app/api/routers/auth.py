@@ -73,7 +73,7 @@ def _find_user_stmt(login: str):
 async def login_request(payload: LoginRequestIn, db: AsyncSession = Depends(get_db)) -> LoginRequestOut:
     settings = get_settings()
     stmt = _find_user_stmt(payload.login)
-    generic_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    generic_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
     if stmt is None:
         raise generic_error
 
@@ -97,11 +97,14 @@ async def login_request(payload: LoginRequestIn, db: AsyncSession = Depends(get_
     await db.commit()
 
     if not settings.telegram_bot_username:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="TELEGRAM_BOT_USERNAME missing")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Вход через Telegram не настроен. Обратитесь к администратору.",
+        )
 
     return LoginRequestOut(
         telegram_link=f"https://t.me/{settings.telegram_bot_username}?start={start_token}",
-        message="Open Telegram bot and press Start to receive verification code.",
+        message="Откройте бота в Telegram и нажмите «Start» — вам пришлют код для входа в CRM.",
     )
 
 
@@ -113,22 +116,22 @@ async def telegram_start(
 ) -> TelegramStartOut:
     settings = get_settings()
     if settings.telegram_bot_webhook_secret and x_bot_secret != settings.telegram_bot_webhook_secret:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid bot secret")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Неверный секрет бота")
 
     result = await db.execute(select(TelegramPendingLink).where(TelegramPendingLink.start_token == payload.start_token))
     pending = result.scalar_one_or_none()
     if pending is None or pending.used_at is not None or _is_expired(pending.expires_at):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired start token")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ссылка входа устарела или недействительна")
 
     user = await db.get(User, pending.user_id)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
 
     incoming_username = normalize_username(payload.telegram_username)
     if user.telegram_id is not None and int(user.telegram_id) != int(payload.telegram_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="This Telegram account is not linked to this CRM user",
+            detail="Этот аккаунт Telegram не привязан к данному пользователю CRM",
         )
 
     # First successful login binds the Telegram account to the CRM user.
@@ -150,14 +153,19 @@ async def telegram_start(
     )
     db.add(code_row)
     await db.commit()
-    return TelegramStartOut(message_to_user=f"Your login code: {code}. Valid for {settings.verification_code_ttl_minutes} minutes.")
+    return TelegramStartOut(
+        message_to_user=f"Код для входа в CRM: {code}. Действует {settings.verification_code_ttl_minutes} мин.",
+    )
 
 
 @router.post("/login-verify", response_model=TokenResponse)
 async def login_verify(payload: LoginVerifyIn, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     settings = get_settings()
     stmt = _find_user_stmt(payload.login)
-    generic_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login or verification code")
+    generic_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Неверный логин или код подтверждения",
+    )
     if stmt is None:
         raise generic_error
 

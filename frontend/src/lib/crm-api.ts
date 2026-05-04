@@ -121,19 +121,54 @@ async function parseJsonOrText<T>(response: Response): Promise<T> {
   }
 }
 
+/** Читабельный текст из FastAPI `detail` (строка, массив Pydantic, объект). */
+export function formatApiDetail(detail: unknown): string {
+  if (detail == null) return "";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const parts = detail.map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "msg" in item) {
+        return String((item as { msg: unknown }).msg);
+      }
+      return "";
+    });
+    const joined = parts.filter(Boolean).join(" ");
+    return joined || "Ошибка запроса";
+  }
+  if (typeof detail === "object" && "msg" in (detail as object)) {
+    const m = (detail as { msg: unknown }).msg;
+    if (typeof m === "string") return m;
+  }
+  try {
+    return JSON.stringify(detail);
+  } catch {
+    return "Ошибка запроса";
+  }
+}
+
+/** Старые англоязычные ответы API (кэш/другая версия бэкенда). */
+function humanizeKnownApiMessage(message: string): string {
+  const map: Record<string, string> = {
+    "Invalid credentials": "Неверный логин или пароль",
+    "Invalid login or verification code": "Неверный логин или код подтверждения",
+    "TELEGRAM_BOT_USERNAME missing": "Вход через Telegram не настроен. Обратитесь к администратору.",
+    "Open Telegram bot and press Start to receive verification code.":
+      "Откройте бота в Telegram и нажмите «Start» — вам пришлют код для входа в CRM.",
+  };
+  return map[message] ?? message;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), init);
   if (!response.ok) {
     const payload = await parseJsonOrText<{ detail?: string | unknown }>(response);
     const detail = payload.detail;
-    const msg =
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? JSON.stringify(detail)
-          : detail && typeof detail === "object"
-            ? JSON.stringify(detail)
-            : `HTTP ${response.status}`;
+    const raw =
+      detail === undefined || detail === null
+        ? `HTTP ${response.status}`
+        : formatApiDetail(detail);
+    const msg = humanizeKnownApiMessage(raw);
     const err = new Error(msg) as ApiError;
     err.status = response.status;
     throw err;

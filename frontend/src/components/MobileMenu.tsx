@@ -11,7 +11,7 @@ export function MobileMenu({
   labels,
 }: {
   locale: Locale;
-  labels: { menu: string; about: string; services: string; booking: string; crm: string };
+  labels: { menu: string; about: string; services: string; booking: string; crm: string; closeMenu: string };
 }) {
   const [open, setOpen] = useState(false);
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
@@ -28,7 +28,7 @@ export function MobileMenu({
               type="button"
               onClick={() => setOpen(false)}
               className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50"
-              aria-label="Close"
+              aria-label={labels.closeMenu}
             >
               ✕
             </button>
@@ -49,7 +49,7 @@ export function MobileMenu({
               </a>
             ))}
             <a
-              href={`/${locale}/crm/login`}
+              href="/ru/crm/login"
               onClick={() => setOpen(false)}
               className="rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
             >
@@ -59,7 +59,7 @@ export function MobileMenu({
         </div>
       </div>
     );
-  }, [labels.about, labels.booking, labels.crm, labels.menu, labels.services, locale, open]);
+  }, [labels.about, labels.booking, labels.closeMenu, labels.crm, labels.menu, labels.services, locale, open]);
 
   return (
     <>

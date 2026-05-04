@@ -84,6 +84,7 @@ export default async function Home({
                 services: t.nav.services,
                 booking: t.nav.booking,
                 crm: t.nav.crm,
+                closeMenu: t.mobile.closeMenu,
               }}
             />
           </div>
