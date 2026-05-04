@@ -52,11 +52,12 @@ describe("BookingForm", () => {
       />,
     );
 
-    await user.type(screen.getByPlaceholderText("Иван"), "Анна");
-    await user.type(screen.getByPlaceholderText("+996"), "+996700111222");
-    await user.selectOptions(screen.getByRole("combobox", { name: /Услуга/i }), "Проверка зрения");
-    await user.type(screen.getByLabelText(/Дата/i), tomorrowYmd());
-    await user.selectOptions(screen.getByRole("combobox", { name: /Время/i }), "12:00");
+    const nameField = await screen.findByPlaceholderText("Иван");
+    await user.type(nameField, "Анна");
+    await user.type(await screen.findByPlaceholderText("+996"), "+996700111222");
+    await user.selectOptions(await screen.findByRole("combobox", { name: /Услуга/i }), "Проверка зрения");
+    await user.type(await screen.findByLabelText(/Дата/i), tomorrowYmd());
+    await user.selectOptions(await screen.findByRole("combobox", { name: /Время/i }), "12:00");
     await user.click(screen.getByRole("button", { name: /Записаться/i }));
 
     await waitFor(() => {

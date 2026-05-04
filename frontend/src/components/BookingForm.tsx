@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type BookingPayload = {
@@ -117,11 +117,29 @@ async function messageFromBookingErrorResponse(res: Response): Promise<string> {
   return trimmed.length <= 400 ? trimmed : fallback;
 }
 
-export function BookingForm({
-  labels,
-  serviceOptions,
-  apiBaseUrl,
-}: {
+function BookingFormSkeleton() {
+  return (
+    <div
+      className="grid gap-3 rounded-2xl bg-white p-5 shadow-sm"
+      aria-busy="true"
+      aria-label="Загрузка формы"
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="h-16 animate-pulse rounded-xl bg-zinc-100" />
+        <div className="h-16 animate-pulse rounded-xl bg-zinc-100" />
+      </div>
+      <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
+        <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
+      </div>
+      <div className="h-24 animate-pulse rounded-xl bg-zinc-100" />
+      <div className="h-11 animate-pulse rounded-xl bg-[#14B8A6]/30" />
+    </div>
+  );
+}
+
+export type BookingFormProps = {
   labels: {
     name: string;
     phone: string;
@@ -135,11 +153,27 @@ export function BookingForm({
   };
   serviceOptions: readonly string[];
   apiBaseUrl: string;
-}) {
+};
+
+export function BookingForm({ labels, serviceOptions, apiBaseUrl }: BookingFormProps) {
   const timeOptions = useMemo(() => generateAllowedTimes(), []);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  /** Поля не рендерим сразу: Chrome/расширения вешают __gchrome_uniqueid до гидрации и ломают React. */
+  const [fieldsMounted, setFieldsMounted] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const id = window.setTimeout(() => {
+      if (alive) setFieldsMounted(true);
+    }, 50);
+    return () => {
+      alive = false;
+      window.clearTimeout(id);
+    };
+  }, []);
 
   useLayoutEffect(() => {
+    if (!fieldsMounted) return;
     function focusBookingFirstField() {
       if (typeof window === "undefined") return;
       if (window.location.hash !== "#booking") return;
@@ -150,7 +184,7 @@ export function BookingForm({
     focusBookingFirstField();
     window.addEventListener("hashchange", focusBookingFirstField);
     return () => window.removeEventListener("hashchange", focusBookingFirstField);
-  }, []);
+  }, [fieldsMounted]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -226,9 +260,14 @@ export function BookingForm({
     }
   }
 
+  if (!fieldsMounted) {
+    return <BookingFormSkeleton />;
+  }
+
   return (
     <form
       className="grid gap-3 rounded-2xl bg-white p-5 shadow-sm"
+      suppressHydrationWarning
       onSubmit={(e) => {
         e.preventDefault();
         void submit();
@@ -260,6 +299,7 @@ export function BookingForm({
             className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
             placeholder={labels.placeholders.name}
             autoComplete="name"
+            suppressHydrationWarning
           />
         </label>
         <label className="grid gap-1 text-sm">
@@ -272,6 +312,7 @@ export function BookingForm({
             placeholder={labels.placeholders.phone}
             inputMode="tel"
             autoComplete="tel"
+            suppressHydrationWarning
           />
         </label>
       </div>
@@ -282,6 +323,7 @@ export function BookingForm({
           value={service}
           onChange={(e) => setService(e.target.value)}
           className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
+          suppressHydrationWarning
         >
           {serviceOptions.map((x) => (
             <option key={x}>{x}</option>
@@ -297,6 +339,7 @@ export function BookingForm({
             onChange={(e) => setDate(e.target.value)}
             type="date"
             className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
+            suppressHydrationWarning
           />
         </label>
         <label className="grid gap-1 text-sm">
@@ -305,6 +348,7 @@ export function BookingForm({
             value={time}
             onChange={(e) => setTime(e.target.value)}
             className="h-11 rounded-xl border border-zinc-200 bg-white px-4 outline-none ring-cyan-200 focus:ring-4"
+            suppressHydrationWarning
           >
             <option value="">--</option>
             {timeOptions.map((t) => (
@@ -323,12 +367,14 @@ export function BookingForm({
           onChange={(e) => setComment(e.target.value)}
           className="min-h-24 rounded-xl border border-zinc-200 bg-white px-4 py-3 outline-none ring-cyan-200 focus:ring-4"
           placeholder={labels.placeholders.comment}
+          suppressHydrationWarning
         />
       </label>
 
       <button
         type="submit"
         disabled={status === "loading"}
+        suppressHydrationWarning
         className={[
           "mt-1 inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white shadow-sm",
           status === "loading" ? "bg-[#14B8A6]/70" : "bg-[#14B8A6] hover:bg-[#11766E]",

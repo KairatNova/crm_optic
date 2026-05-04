@@ -1,40 +1,14 @@
 import Image from "next/image";
-import dynamic from "next/dynamic";
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MobileMenu } from "@/components/MobileMenu";
 import { BrandLogo } from "@/components/BrandLogo";
+import { LandingBookingForm } from "@/components/landing/LandingBookingForm";
 import { LandingContactSection } from "@/components/landing/LandingContactSection";
 import { getDictionary } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 import { applyLandingOverrides } from "@/lib/landing-overrides";
 import { landingDemoPhotos } from "@/lib/landing-demo-photos";
-
-const BookingForm = dynamic(
-  () => import("@/components/BookingForm").then((mod) => mod.BookingForm),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="grid gap-3 rounded-2xl bg-white p-5 shadow-sm"
-        aria-busy="true"
-        aria-label="Загрузка формы"
-      >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="h-16 animate-pulse rounded-xl bg-zinc-100" />
-          <div className="h-16 animate-pulse rounded-xl bg-zinc-100" />
-        </div>
-        <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
-          <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
-        </div>
-        <div className="h-24 animate-pulse rounded-xl bg-zinc-100" />
-        <div className="h-11 animate-pulse rounded-xl bg-[#14B8A6]/30" />
-      </div>
-    ),
-  },
-);
 
 export default async function Home({
   params,
@@ -263,7 +237,7 @@ export default async function Home({
                 </div>
 
                 <div className="min-w-0">
-                  <BookingForm
+                  <LandingBookingForm
                     apiBaseUrl={apiBaseUrl}
                     labels={t.booking.form}
                     serviceOptions={t.booking.form.serviceOptions}
