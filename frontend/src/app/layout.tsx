@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { AppToaster } from "@/components/AppToaster";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +38,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
+        <AppToaster />
       </body>
     </html>
   );

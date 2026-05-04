@@ -1,7 +1,7 @@
 import Image from "next/image";
+import dynamic from "next/dynamic";
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { BookingForm } from "@/components/BookingForm";
 import { MobileMenu } from "@/components/MobileMenu";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LandingContactSection } from "@/components/landing/LandingContactSection";
@@ -9,6 +9,32 @@ import { getDictionary } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 import { applyLandingOverrides } from "@/lib/landing-overrides";
 import { landingDemoPhotos } from "@/lib/landing-demo-photos";
+
+const BookingForm = dynamic(
+  () => import("@/components/BookingForm").then((mod) => mod.BookingForm),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="grid gap-3 rounded-2xl bg-white p-5 shadow-sm"
+        aria-busy="true"
+        aria-label="Загрузка формы"
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="h-16 animate-pulse rounded-xl bg-zinc-100" />
+          <div className="h-16 animate-pulse rounded-xl bg-zinc-100" />
+        </div>
+        <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
+          <div className="h-11 animate-pulse rounded-xl bg-zinc-100" />
+        </div>
+        <div className="h-24 animate-pulse rounded-xl bg-zinc-100" />
+        <div className="h-11 animate-pulse rounded-xl bg-[#14B8A6]/30" />
+      </div>
+    ),
+  },
+);
 
 export default async function Home({
   params,
@@ -276,21 +302,6 @@ export default async function Home({
           </div>
         </footer>
       </main>
-
-      {/* Mobile-first sticky booking CTA */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 p-3 md:hidden">
-        <div className="pointer-events-auto mx-auto max-w-md rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-lg backdrop-blur">
-          <a
-            href={`/${locale}/#booking`}
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#14B8A6] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#11766E]"
-          >
-            {t.mobile.stickyCta}
-          </a>
-        </div>
-      </div>
-
-      {/* Spacer so sticky CTA doesn't cover content */}
-      <div className="h-20 md:hidden" />
     </div>
   );
 }

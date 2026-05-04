@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type BookingPayload = {
   name: string;
@@ -70,6 +71,52 @@ function generateAllowedTimes() {
   return options;
 }
 
+function humanizeApiDetail(detail: string): string {
+  if (detail === "starts_at must not be in the past") {
+    return "Выберите дату и время в будущем.";
+  }
+  return detail;
+}
+
+async function messageFromBookingErrorResponse(res: Response): Promise<string> {
+  const fallback =
+    res.status === 429
+      ? "Слишком много заявок. Подождите немного и попробуйте снова."
+      : res.status === 400
+        ? "Не удалось принять заявку. Проверьте дату и данные."
+        : `Ошибка сервера (${res.status}). Попробуйте позже.`;
+  let raw = "";
+  try {
+    raw = await res.text();
+  } catch {
+    return fallback;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+  try {
+    const j = JSON.parse(trimmed) as unknown;
+    if (j && typeof j === "object" && "detail" in j) {
+      const d = (j as { detail: unknown }).detail;
+      if (typeof d === "string") return humanizeApiDetail(d);
+      if (Array.isArray(d)) {
+        const parts = d
+          .map((item) => {
+            if (typeof item === "string") return humanizeApiDetail(item);
+            if (item && typeof item === "object" && "msg" in item) {
+              return humanizeApiDetail(String((item as { msg: unknown }).msg));
+            }
+            return "";
+          })
+          .filter(Boolean);
+        if (parts.length) return parts.join(" ");
+      }
+    }
+  } catch {
+    /* не JSON */
+  }
+  return trimmed.length <= 400 ? trimmed : fallback;
+}
+
 export function BookingForm({
   labels,
   serviceOptions,
@@ -134,6 +181,7 @@ export function BookingForm({
     if (validationError) {
       setStatus("error");
       setMessage(validationError);
+      toast.error(validationError);
       return;
     }
 
@@ -155,21 +203,26 @@ export function BookingForm({
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
+        const errText = await messageFromBookingErrorResponse(res);
+        throw new Error(errText);
       }
 
+      const okMsg = "Готово! Мы получили заявку и скоро свяжемся с вами.";
       setStatus("success");
-      setMessage("Готово! Мы получили заявку и скоро свяжемся с вами.");
+      setMessage(okMsg);
+      toast.success(okMsg);
       setName("");
       setPhone("");
       setDate("");
       setTime("");
       setComment("");
       setService(serviceOptions[0] || "");
-    } catch {
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Не удалось отправить заявку. Попробуйте ещё раз.";
       setStatus("error");
-      setMessage("Не удалось отправить заявку. Попробуйте ещё раз.");
+      setMessage(msg);
+      toast.error(msg);
     }
   }
 
