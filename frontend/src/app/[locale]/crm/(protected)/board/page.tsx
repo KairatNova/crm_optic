@@ -4,6 +4,7 @@ import {
   DndContext,
   type DragEndEvent,
   PointerSensor,
+  TouchSensor,
   closestCorners,
   useDraggable,
   useDroppable,
@@ -320,6 +321,9 @@ export default function CrmBoardPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
     }),
   );
 
@@ -649,15 +653,15 @@ export default function CrmBoardPage() {
       )}
 
       {selectedRow ? (
-        <div className="fixed inset-0 z-40 flex justify-end">
+        <div className="fixed inset-0 z-40 flex max-h-[100dvh] justify-end">
           <button
             type="button"
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-[1px]"
             aria-label="Закрыть панель"
             onClick={() => setSelectedRow(null)}
           />
-          <aside className="relative z-50 flex h-full w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
+          <aside className="relative z-50 flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-md flex-col border-l border-slate-200 bg-white pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] shadow-xl">
+            <div className="flex shrink-0 items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
               <div>
                 <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Запись</div>
                 <div className="text-lg font-bold text-slate-900">№{selectedRow.id}</div>
@@ -670,7 +674,7 @@ export default function CrmBoardPage() {
                 Закрыть
               </button>
             </div>
-            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
               <div>
                 <div className="text-xs font-medium text-slate-500">Клиент</div>
                 <Link

@@ -116,8 +116,8 @@ export default function CrmCalendarPage() {
         </CardHeader>
       </Card>
 
-      <div className="overflow-x-auto pb-1">
-        <div className="grid min-w-[980px] gap-3 lg:min-w-0 lg:grid-cols-7">
+      <div className="pb-1">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
           {weekDays.map((d) => {
             const key = dayKeyLocal(d);
             const list = byDay.get(key) ?? [];

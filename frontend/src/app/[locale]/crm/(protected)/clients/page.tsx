@@ -41,7 +41,7 @@ export default function ClientsPage() {
   const [createBirthDate, setCreateBirthDate] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createFormOpen, setCreateFormOpen] = useState(false);
-  const [listVisible, setListVisible] = useState(false);
+  const [listVisible, setListVisible] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [exportBusy, setExportBusy] = useState<OwnerExportVariant | null>(null);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -263,7 +263,12 @@ export default function ClientsPage() {
             <div className="text-sm text-slate-600">
               {loading ? "Загрузка..." : `Показано ${paginated.length} из ${filtered.length}`}
             </div>
-            <Button variant="outline" size="sm" className="shrink-0" onClick={() => setListVisible(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden shrink-0 md:inline-flex"
+              onClick={() => setListVisible(false)}
+            >
               Скрыть список
             </Button>
           </div>
