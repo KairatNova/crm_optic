@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.git
+.env
+.env.*
+npm-debug.log*
+*.md
+coverage
+.vitest
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

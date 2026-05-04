@@ -1,8 +1,9 @@
-# API вместе с Postgres из docker-compose.yml:
+# БД + API + веб:
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml up --build
 #
-# Нужен файл `.env` в корне (скопируйте из `.env.example`), минимум DATABASE_URL
-# подставится из переменных ниже; остальное (JWT, Telegram) — из `.env`.
+# Нужен файл `.env` в корне для секретов (JWT, Telegram и т.д.). DATABASE_URL для API
+# задаётся через environment ниже. Для фронта при сборке используется
+# NEXT_PUBLIC_API_BASE_URL — URL API в браузере (по умолчанию http://localhost:8000).
 
 services:
   api:
@@ -17,6 +18,31 @@ services:
     env_file:
       - path: .env
         required: false
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+    container_name: crm_optic_web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
         condition: service_healthy
