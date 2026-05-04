@@ -53,6 +53,52 @@ function toDatetimeLocalValue(iso: string): string {
 
 type ApiStatusFilter = "all" | AppointmentStatus;
 
+type AppointmentStatsSnapshot = {
+  total: number;
+  overdue: number;
+  byStatus: Record<AppointmentStatus, number>;
+};
+
+function AppointmentStatsCards({ stats, variant }: { stats: AppointmentStatsSnapshot; variant: "grid" | "strip" }) {
+  const strip = variant === "strip";
+  const pad = strip ? "p-3" : "p-4";
+  const numCls = strip ? "mt-1 text-xl font-bold" : "mt-1 text-2xl font-bold";
+  const shell = strip ? `rounded-xl border ${pad} shadow-sm shrink-0 min-w-[8.75rem]` : `rounded-xl border ${pad} shadow-sm`;
+
+  const body = (
+    <>
+      <div className={`${shell} border-slate-200 bg-white`}>
+        <div className="text-xs font-semibold text-slate-500">Всего</div>
+        <div className={`${numCls} text-slate-900`}>{stats.total}</div>
+      </div>
+      <div className={`${shell} border-amber-200 bg-amber-50/40`}>
+        <div className="text-xs font-semibold text-amber-700">Просрочено</div>
+        <div className={`${numCls} text-amber-900`}>{stats.overdue}</div>
+      </div>
+      <div className={`${shell} border-sky-200 bg-sky-50/40`}>
+        <div className="text-xs font-semibold text-sky-700">Новые</div>
+        <div className={`${numCls} text-sky-900`}>{stats.byStatus.new}</div>
+      </div>
+      <div className={`${shell} border-violet-200 bg-violet-50/40`}>
+        <div className="text-xs font-semibold text-violet-700">Подтверждено</div>
+        <div className={`${numCls} text-violet-900`}>{stats.byStatus.confirmed}</div>
+      </div>
+      <div className={`${shell} border-emerald-200 bg-emerald-50/40`}>
+        <div className="text-xs font-semibold text-emerald-700">Выполнено</div>
+        <div className={`${numCls} text-emerald-900`}>{stats.byStatus.done}</div>
+      </div>
+    </>
+  );
+
+  if (strip) {
+    return (
+      <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]">{body}</div>
+    );
+  }
+
+  return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{body}</div>;
+}
+
 export default function CrmAppointmentsPage() {
   const { token } = useCrmSession();
   const params = useParams<{ locale: string }>();
@@ -378,27 +424,8 @@ export default function CrmAppointmentsPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-semibold text-slate-500">Всего</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</div>
-          </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm">
-            <div className="text-xs font-semibold text-amber-700">Просрочено</div>
-            <div className="mt-1 text-2xl font-bold text-amber-900">{stats.overdue}</div>
-          </div>
-          <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4 shadow-sm">
-            <div className="text-xs font-semibold text-sky-700">Новые</div>
-            <div className="mt-1 text-2xl font-bold text-sky-900">{stats.byStatus.new}</div>
-          </div>
-          <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 shadow-sm">
-            <div className="text-xs font-semibold text-violet-700">Подтверждено</div>
-            <div className="mt-1 text-2xl font-bold text-violet-900">{stats.byStatus.confirmed}</div>
-          </div>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm">
-            <div className="text-xs font-semibold text-emerald-700">Выполнено</div>
-            <div className="mt-1 text-2xl font-bold text-emerald-900">{stats.byStatus.done}</div>
-          </div>
+        <div className="mt-4 hidden md:block">
+          <AppointmentStatsCards stats={stats} variant="grid" />
         </div>
 
         <div className="mt-4">
@@ -710,6 +737,12 @@ export default function CrmAppointmentsPage() {
             );
           })
         )}
+      </div>
+
+      <div className="mt-3 md:hidden">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm sm:p-4">
+          <AppointmentStatsCards stats={stats} variant="strip" />
+        </div>
       </div>
 
       <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
