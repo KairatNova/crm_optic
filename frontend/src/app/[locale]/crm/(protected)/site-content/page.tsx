@@ -123,10 +123,8 @@ export default function SiteContentPage() {
       <Card>
         <CardHeader>
           <h1 className="text-xl font-bold text-slate-900">Контент лендинга</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Тексты для выбранной локали подмешиваются поверх статических переводов. Пустые поля не перезаписывают словарь.
-          </p>
-          <div className="mt-3 flex flex-wrap items-end gap-3">
+          <p className="mt-1 text-xs text-slate-500">Пустые поля не перезаписывают словарь.</p>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <label className="grid gap-1 text-sm">
               <span className="text-xs font-medium text-slate-600">Локаль</span>
               <Select value={locale} onChange={(e) => setLocale(e.target.value as Locale)} className="h-10 min-w-[8rem]">
@@ -137,7 +135,7 @@ export default function SiteContentPage() {
                 ))}
               </Select>
             </label>
-            <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => void load()}>
+            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" disabled={loading} onClick={() => void load()}>
               {loading ? "Загрузка…" : "Загрузить с сервера"}
             </Button>
           </div>
@@ -207,7 +205,7 @@ export default function SiteContentPage() {
             </div>
           </div>
 
-          <Button type="button" variant="primary" disabled={saving} onClick={() => void onSave()}>
+          <Button type="button" variant="primary" className="w-full sm:w-auto" disabled={saving} onClick={() => void onSave()}>
             {saving ? "Сохранение…" : "Сохранить"}
           </Button>
         </CardContent>

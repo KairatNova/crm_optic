@@ -509,8 +509,7 @@ export default function ClientCardPage() {
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Профиль клиента</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">{client.name || "Клиент"}</h1>
             </div>
             {!isEditingProfile ? (
               <div className="flex flex-wrap gap-2">

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { Locale } from "@/i18n/locales";
+
+const subscribe = () => () => {};
 
 export function MobileMenu({
   locale,
@@ -12,11 +14,7 @@ export function MobileMenu({
   labels: { menu: string; about: string; services: string; booking: string; crm: string };
 }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
   const overlay = useMemo(() => {
     if (!open) return null;

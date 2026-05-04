@@ -54,8 +54,8 @@ export default function CrmAnalyticsPage() {
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Аналитика и статистика</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Аналитика</h1>
+              <p className="mt-1 text-xs text-slate-500">{titleRange}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="primary" disabled={loading} onClick={() => void load()}>
@@ -65,19 +65,15 @@ export default function CrmAnalyticsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
-              <span className="text-xs font-medium text-slate-600">Период: от</span>
+              <span className="text-xs font-medium text-slate-600">От</span>
               <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             </label>
             <label className="grid gap-1 text-sm">
-              <span className="text-xs font-medium text-slate-600">Период: до</span>
+              <span className="text-xs font-medium text-slate-600">До</span>
               <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
             </label>
-            <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm shadow-sm">
-              <div className="text-xs font-semibold text-slate-500">Текущий диапазон</div>
-              <div className="mt-1 font-semibold text-slate-900">{titleRange}</div>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -87,12 +83,7 @@ export default function CrmAnalyticsPage() {
       <div className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-slate-500">📊 1. Количество клиентов</div>
-                <div className="mt-1 text-lg font-bold text-slate-900">Клиенты</div>
-              </div>
-            </div>
+            <h2 className="text-lg font-bold text-slate-900">Клиенты</h2>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -110,10 +101,7 @@ export default function CrmAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <div>
-              <div className="text-xs font-semibold text-slate-500">📅 2. Количество записей</div>
-              <div className="mt-1 text-lg font-bold text-slate-900">Записи</div>
-            </div>
+            <h2 className="text-lg font-bold text-slate-900">Записи</h2>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -131,16 +119,11 @@ export default function CrmAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <div>
-              <div className="text-xs font-semibold text-slate-500">📈 3. Конверсия записей</div>
-              <div className="mt-1 text-lg font-bold text-slate-900">Конверсия</div>
-            </div>
+            <h2 className="text-lg font-bold text-slate-900">Конверсия</h2>
           </CardHeader>
           <CardContent>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="text-xs font-semibold text-slate-500">Формула</div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">пришли / записались × 100%</div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div className="mt-1 grid gap-2 sm:grid-cols-3">
                 <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
                   <div className="text-xs font-semibold text-slate-500">Записались</div>
                   <div className="font-bold text-slate-900">{data ? data.appointments_total : "—"}</div>
@@ -160,10 +143,7 @@ export default function CrmAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <div>
-              <div className="text-xs font-semibold text-slate-500">🔝 4. Популярные услуги</div>
-              <div className="mt-1 text-lg font-bold text-slate-900">Услуги</div>
-            </div>
+            <h2 className="text-lg font-bold text-slate-900">Услуги</h2>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

@@ -175,8 +175,6 @@ export default function AppointmentDetailPage() {
             <Card>
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
-                  <span className="text-slate-300">/</span>
                   <h1 className="text-xl font-bold text-slate-900">Запись №{detail.id}</h1>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${src.className}`}>{src.text}</span>
                 </div>
@@ -259,11 +257,11 @@ export default function AppointmentDetailPage() {
                     placeholder="Комментарий к записи…"
                   />
                 </label>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Button variant="primary" disabled={saving} onClick={() => void onSave()}>
+                <div className="grid gap-2 pt-1 sm:flex sm:flex-wrap">
+                  <Button variant="primary" className="w-full sm:w-auto" disabled={saving} onClick={() => void onSave()}>
                     {saving ? "Сохранение…" : "Сохранить изменения"}
                   </Button>
-                  <Button variant="danger" disabled={deleting || saving} onClick={() => void onSoftDeleteDetail()}>
+                  <Button variant="danger" className="w-full sm:w-auto" disabled={deleting || saving} onClick={() => void onSoftDeleteDetail()}>
                     {deleting ? "Скрытие…" : "Скрыть запись"}
                   </Button>
                 </div>

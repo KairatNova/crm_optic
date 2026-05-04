@@ -10,6 +10,8 @@
 
 Postgres можно поднять через Docker или локально — задайте `DATABASE_URL` в `.env` (шаблон: **`.env.example`** в корне репозитория).
 
+**Postgres + API в Docker:** `docker compose -f docker-compose.yml -f docker-compose.app.yml up --build` (образ API: `backend/Dockerfile`). Переменные вроде `JWT_SECRET` и Telegram — в `.env` (скопируйте из `.env.example`).
+
 Актуальные миграции включают в том числе **`0011_landing_locale_content`**, **`0012_client_audit`**. Пока Postgres не запущен или БД не создана, `alembic upgrade` завершится ошибкой подключения — это нормально, сначала поднимите сервер БД.
 
 **Резервные копии БД:** см. **[`docs/DATABASE_BACKUPS.md`](../docs/DATABASE_BACKUPS.md)** (`pg_dump`, бэкапы на Railway/Render).

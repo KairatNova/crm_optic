@@ -191,10 +191,7 @@ export default function CrmUsersPage() {
       <Card>
         <CardHeader>
           <h1 className="text-xl font-bold text-slate-900">Администраторы</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Создание учётных записей с логином и паролем. После входа админ привязывает Telegram по коду из бота. Первый{" "}
-            <strong>owner</strong> создаётся на сервере (скрипт/сид), не через эту форму.
-          </p>
+          <p className="mt-1 text-xs text-slate-500">Owner задаётся на сервере; здесь — только админы.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -252,7 +249,7 @@ export default function CrmUsersPage() {
             <ul className="divide-y divide-slate-100">
               {admins.map((a) => (
                 <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-4 text-sm">
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0 flex-1">
                     <div className="font-medium text-slate-900">{displayLogin(a)}</div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="muted">{a.full_name || "—"}</Badge>
@@ -260,11 +257,11 @@ export default function CrmUsersPage() {
                       {a.is_active ? <Badge>active</Badge> : <Badge variant="muted">off</Badge>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => void toggleActive(a)}>
+                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                    <Button type="button" size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => void toggleActive(a)}>
                       {a.is_active ? "Деактивировать" : "Активировать"}
                     </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => startEdit(a)}>
+                    <Button type="button" size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => startEdit(a)}>
                       Редактировать
                     </Button>
                   </div>

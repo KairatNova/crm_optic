@@ -1,0 +1,22 @@
+# API вместе с Postgres из docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.app.yml up --build
+#
+# Нужен файл `.env` в корне (скопируйте из `.env.example`), минимум DATABASE_URL
+# подставится из переменных ниже; остальное (JWT, Telegram) — из `.env`.
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm_optic_api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-crm_optic}:${POSTGRES_PASSWORD:-crm_optic}@db:5432/${POSTGRES_DB:-crm_optic}
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy

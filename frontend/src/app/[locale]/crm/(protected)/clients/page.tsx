@@ -161,9 +161,7 @@ export default function ClientsPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Клиенты</h1>
-            <p className="mt-1 text-sm text-slate-600">Поиск и карточка клиента (визиты / тесты / история записей).</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Клиенты</h1>
           </div>
           {user.role === "owner" ? (
             <div ref={exportMenuRef} className="relative shrink-0">
@@ -256,9 +254,8 @@ export default function ClientsPage() {
       {!listVisible ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <Button variant="primary" onClick={() => setListVisible(true)}>
-            Показать список клиентов
+            Показать список ({filtered.length})
           </Button>
-          <p className="mt-2 text-xs text-slate-600">Найдено: {filtered.length}. На странице отображается до {PAGE_SIZE} клиентов.</p>
         </div>
       ) : (
         <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -270,7 +267,28 @@ export default function ClientsPage() {
               Скрыть список
             </Button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="space-y-2 md:hidden">
+            {loading ? (
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-500">Загрузка...</div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-500">Клиентов не найдено</div>
+            ) : (
+              paginated.map((c) => (
+                <div key={c.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
+                  <div className="font-semibold text-slate-900">{c.name || "—"}</div>
+                  <div className="mt-1 text-xs text-slate-600">Телефон: {c.phone}</div>
+                  <div className="text-xs text-slate-600">Email: {c.email || "—"}</div>
+                  <div className="text-xs text-slate-600">
+                    Дата рождения: {c.birth_date ? new Date(c.birth_date).toLocaleDateString() : "—"}
+                  </div>
+                  <a href={`/${locale}/crm/clients/${c.id}`} className="mt-2 inline-flex text-xs font-semibold text-teal-700 hover:underline">
+                    Открыть карточку
+                  </a>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>

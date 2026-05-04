@@ -158,7 +158,7 @@ function KanbanColumn({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
   return (
-    <div className={["flex w-[min(100%,280px)] shrink-0 flex-col rounded-2xl border shadow-sm", theme.shell].join(" ")}>
+    <div className={["flex w-[85vw] max-w-[280px] shrink-0 flex-col rounded-2xl border shadow-sm sm:w-[min(100%,280px)]", theme.shell].join(" ")}>
       <div className={["border-b px-3 py-2.5", theme.header].join(" ")}>
         <div className={["text-sm font-bold", theme.headerTitle].join(" ")}>{title}</div>
         <div className={["text-xs font-medium", theme.headerMeta].join(" ")}>{recordsCountLabel(count)}</div>
@@ -181,10 +181,12 @@ function AppointmentCard({
   row,
   locale,
   onOpen,
+  onQuickStatusChange,
 }: {
   row: AppointmentRow;
   locale: string;
   onOpen: (row: AppointmentRow) => void;
+  onQuickStatusChange: (row: AppointmentRow, next: AppointmentStatus) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `appt-${row.id}`,
@@ -207,7 +209,7 @@ function AppointmentCard({
       <div className="flex gap-2">
         <button
           type="button"
-          className="mt-0.5 shrink-0 cursor-grab touch-none rounded-lg border border-slate-200 bg-slate-50 px-1.5 py-2 text-slate-500 hover:bg-slate-100 active:cursor-grabbing"
+          className="mt-0.5 hidden shrink-0 cursor-grab rounded-lg border border-slate-200 bg-slate-50 px-1.5 py-2 text-slate-500 hover:bg-slate-100 active:cursor-grabbing md:block md:touch-none"
           aria-label="Перетащить карточку"
           {...listeners}
           {...attributes}
@@ -269,6 +271,22 @@ function AppointmentCard({
             >
               Запись →
             </Link>
+          </div>
+          <div className="mt-2 md:hidden">
+            <label className="grid gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Статус</span>
+              <select
+                value={boardColumnForStatus(row.status)}
+                onChange={(e) => onQuickStatusChange(row, e.target.value as AppointmentStatus)}
+                className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-medium"
+              >
+                {KANBAN_COLUMNS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </div>
       </div>
@@ -464,6 +482,30 @@ export default function CrmBoardPage() {
     }
   }
 
+  async function quickChangeStatus(row: AppointmentRow, next: AppointmentStatus) {
+    const current = boardColumnForStatus(row.status);
+    if (current === next) return;
+    const previous = appointments;
+    setAppointments((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: next } : r)));
+    setError(null);
+    try {
+      const body: Parameters<typeof patchAppointment>[2] = { status: next };
+      if (next === "cancelled") {
+        body.cancellation_reason = "client_request";
+      }
+      const updated = await patchAppointment(token, row.id, body);
+      setAppointments((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, ...updated, client_name: r.client_name, client_phone: r.client_phone } : r)),
+      );
+      toast.success("Статус обновлён");
+    } catch (e) {
+      setAppointments(previous);
+      const msg = e instanceof Error ? e.message : "Не удалось изменить статус";
+      setError(msg);
+      toast.error(msg);
+    }
+  }
+
   async function applyPanelStatus() {
     if (!selectedRow) return;
     setPanelSaving(true);
@@ -501,11 +543,7 @@ export default function CrmBoardPage() {
         <CardHeader className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Kanban</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Записи по статусам. Перетащите карточку за ручку слева; клик по карточке открывает панель.
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Канбан</h1>
           </div>
           <Button variant="primary" disabled={loading || refreshing} onClick={() => void refresh()}>
             {refreshing ? "Обновление…" : "Обновить"}
@@ -514,24 +552,20 @@ export default function CrmBoardPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-semibold text-slate-500">Всего (загружено)</div>
+            <div className="text-xs font-semibold text-slate-500">Загружено</div>
             <div className="mt-1 text-2xl font-bold text-slate-900">{appointments.length}</div>
-            <div className="mt-1 text-xs text-slate-500">Записей в памяти</div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="text-xs font-semibold text-slate-500">На доске</div>
             <div className="mt-1 text-2xl font-bold text-slate-900">{filteredRows.length}</div>
-            <div className="mt-1 text-xs text-slate-500">С учётом фильтров</div>
           </div>
           <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm">
             <div className="text-xs font-semibold text-amber-700">Просрочено</div>
             <div className="mt-1 text-2xl font-bold text-amber-900">{filteredRows.filter(isAppointmentOverdue).length}</div>
-            <div className="mt-1 text-xs text-amber-800/80">Не done/cancelled</div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-semibold text-slate-500">Выбранный статус</div>
+            <div className="text-xs font-semibold text-slate-500">Фильтр статуса</div>
             <div className="mt-1 text-2xl font-bold text-slate-900">{statusFilter === "all" ? "Все" : statusFilter}</div>
-            <div className="mt-1 text-xs text-slate-500">Локальный фильтр</div>
           </div>
         </div>
 
@@ -566,23 +600,22 @@ export default function CrmBoardPage() {
             </Select>
           </label>
           <div className="text-xs text-slate-500 sm:col-span-2 lg:col-span-2 lg:self-end">
-            На доске: <span className="font-semibold text-slate-700">{filteredRows.length}</span> из {appointments.length}
+            <span className="font-semibold text-slate-700">{filteredRows.length}</span>
+            <span className="text-slate-400"> / </span>
+            {appointments.length}
           </div>
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Дата от (необязательно)</span>
+            <span className="text-xs font-medium text-slate-600">От</span>
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Дата до (по умолчанию — сегодня)</span>
+            <span className="text-xs font-medium text-slate-600">До</span>
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </label>
         </div>
-        <p className="text-xs text-slate-500">
-          «Дата от» можно не заполнять — нижней границы не будет. «Дата до» изначально сегодня; очистите поле, чтобы убрать верхнюю границу.
-        </p>
         </CardHeader>
       </Card>
 
@@ -598,7 +631,15 @@ export default function CrmBoardPage() {
               return (
                 <KanbanColumn key={col.id} columnId={col.id} title={col.title} count={items.length} theme={col.theme}>
                   {items.map((row) => (
-                    <AppointmentCard key={row.id} row={row} locale={locale} onOpen={setSelectedRow} />
+                    <AppointmentCard
+                      key={row.id}
+                      row={row}
+                      locale={locale}
+                      onOpen={setSelectedRow}
+                      onQuickStatusChange={(target, next) => {
+                        void quickChangeStatus(target, next);
+                      }}
+                    />
                   ))}
                 </KanbanColumn>
               );

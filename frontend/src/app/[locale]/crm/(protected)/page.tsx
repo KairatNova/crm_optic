@@ -363,9 +363,7 @@ export default function CrmAppointmentsPage() {
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CRM</div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Записи</h1>
-            <p className="mt-1 text-sm text-slate-600">Оперативная лента: фильтры, quick create, inline-правка, мягкое удаление.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Записи</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" disabled={loading || refreshing} onClick={() => refresh()}>
@@ -382,42 +380,36 @@ export default function CrmAppointmentsPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs font-semibold text-slate-500">Всего (в фильтре)</div>
+            <div className="text-xs font-semibold text-slate-500">Всего</div>
             <div className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</div>
-            <div className="mt-1 text-xs text-slate-500">С учётом локальных фильтров</div>
           </div>
           <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm">
             <div className="text-xs font-semibold text-amber-700">Просрочено</div>
             <div className="mt-1 text-2xl font-bold text-amber-900">{stats.overdue}</div>
-            <div className="mt-1 text-xs text-amber-800/80">Не done/cancelled</div>
           </div>
           <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4 shadow-sm">
             <div className="text-xs font-semibold text-sky-700">Новые</div>
             <div className="mt-1 text-2xl font-bold text-sky-900">{stats.byStatus.new}</div>
-            <div className="mt-1 text-xs text-sky-800/80">Статус new</div>
           </div>
           <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 shadow-sm">
             <div className="text-xs font-semibold text-violet-700">Подтверждено</div>
             <div className="mt-1 text-2xl font-bold text-violet-900">{stats.byStatus.confirmed}</div>
-            <div className="mt-1 text-xs text-violet-800/80">Статус confirmed</div>
           </div>
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm">
             <div className="text-xs font-semibold text-emerald-700">Выполнено</div>
             <div className="mt-1 text-2xl font-bold text-emerald-900">{stats.byStatus.done}</div>
-            <div className="mt-1 text-xs text-emerald-800/80">Статус done</div>
           </div>
         </div>
 
         <div className="mt-4">
           <Button variant="outline" onClick={() => setNbFormOpen((v) => !v)}>
-            {nbFormOpen ? "Скрыть форму новой записи" : "Новая запись (CRM)"}
+            {nbFormOpen ? "Скрыть форму" : "Новая запись"}
           </Button>
         </div>
 
         {nbFormOpen ? (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <h2 className="text-sm font-bold text-slate-900">Quick create</h2>
-          <p className="mt-1 text-xs text-slate-600">Поиск клиента по телефону; если не найден — создаётся новый клиент. Услуга — из списка.</p>
+          <h2 className="text-sm font-bold text-slate-900">Новая запись</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="grid gap-1 text-sm sm:col-span-2">
               <span className="text-xs font-medium text-slate-600">Телефон для поиска</span>
@@ -485,7 +477,7 @@ export default function CrmAppointmentsPage() {
             />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Статус (загрузка с сервера)</span>
+            <span className="text-xs font-medium text-slate-600">Статус</span>
             <Select value={apiStatusFilter} onChange={(e) => setApiStatusFilter(e.target.value as ApiStatusFilter)}>
               <option value="all">Все статусы</option>
               {APPOINTMENT_STATUSES.map((s) => (
@@ -506,24 +498,22 @@ export default function CrmAppointmentsPage() {
             </Select>
           </label>
           <div className="text-xs text-slate-500 sm:col-span-2 lg:col-span-2 lg:self-end">
-            В таблице: <span className="font-semibold text-slate-700">{filteredRows.length}</span> из загруженных{" "}
+            <span className="font-semibold text-slate-700">{filteredRows.length}</span>
+            <span className="text-slate-400"> / </span>
             {appointments.length}
           </div>
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Дата от (необязательно)</span>
+            <span className="text-xs font-medium text-slate-600">От</span>
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-xs font-medium text-slate-600">Дата до (по умолчанию — сегодня)</span>
+            <span className="text-xs font-medium text-slate-600">До</span>
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </label>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
-          «Дата от» можно не заполнять. «Дата до» изначально сегодня; очистите поле, чтобы не ограничивать период сверху.
-        </p>
       </div>
 
       {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div> : null}
@@ -582,7 +572,147 @@ export default function CrmAppointmentsPage() {
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Загрузка...</div>
+        ) : filteredRows.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Записей пока нет</div>
+        ) : (
+          filteredRows.map((row) => {
+            const overdue = isAppointmentOverdue(row);
+            return (
+              <div
+                key={row.id}
+                className={[
+                  "rounded-2xl border bg-white p-4 shadow-sm",
+                  overdue ? "border-amber-300 bg-amber-50/30" : "border-slate-200",
+                ].join(" ")}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <Link href={`/${locale}/crm/clients/${row.client_id}`} className="text-sm font-semibold text-teal-700 hover:underline">
+                      {row.client_name || `Клиент #${row.client_id}`}
+                    </Link>
+                    <div className="mt-0.5 text-xs text-slate-500">{row.client_phone || "—"}</div>
+                  </div>
+                  <span
+                    className={[
+                      "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
+                      appointmentStatusBadgeClass(row.status),
+                    ].join(" ")}
+                  >
+                    {statusBadgeText(row)}
+                  </span>
+                </div>
+
+                <div className="mt-3 space-y-1 text-xs text-slate-600">
+                  <div>
+                    Запись:{" "}
+                    <Link href={`/${locale}/crm/appointments/${row.id}`} className="font-semibold text-teal-700 hover:underline">
+                      №{row.id}
+                    </Link>
+                    {row.source === "landing" ? (
+                      <span className="ml-1 rounded bg-indigo-100 px-1 py-0.5 text-[10px] font-semibold text-indigo-800">сайт</span>
+                    ) : null}
+                    {overdue ? (
+                      <span className="ml-1 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-950">просрочено</span>
+                    ) : null}
+                  </div>
+                  <div>Услуга: {row.service || "—"}</div>
+                  <div>Дата/время: {new Date(row.starts_at).toLocaleString("ru-RU")}</div>
+                  <div className="line-clamp-2">Комментарий: {row.comment?.trim() ? row.comment : "—"}</div>
+                  {row.status === "cancelled" && row.cancellation_reason ? (
+                    <div className="line-clamp-2 text-[11px]">Причина: {row.cancellation_reason}</div>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  <select
+                    value={statusSelectValue(row)}
+                    disabled={updatingId === row.id}
+                    onChange={(e) => {
+                      const next = e.target.value as AppointmentStatus;
+                      if (next === "cancelled") {
+                        setCancelTarget(row);
+                        setCancelReasonCode("client_request");
+                        setCancelReasonOther("");
+                        return;
+                      }
+                      void setAppointmentStatus(row, next);
+                    }}
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium disabled:opacity-50"
+                  >
+                    {!isKnownAppointmentStatus(row.status) && row.status ? (
+                      <option value={row.status}>{row.status} (в БД)</option>
+                    ) : null}
+                    {APPOINTMENT_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {APPOINTMENT_STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+
+                  {editingId === row.id ? (
+                    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                      <input
+                        value={editService}
+                        onChange={(e) => setEditService(e.target.value)}
+                        className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                        placeholder="Услуга"
+                      />
+                      <input
+                        type="datetime-local"
+                        value={editStarts}
+                        onChange={(e) => setEditStarts(e.target.value)}
+                        className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={updatingId === row.id}
+                          onClick={() => void saveRowEdit(row)}
+                          className="rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-50"
+                        >
+                          Сохранить
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === row.id}
+                          onClick={cancelEdit}
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={updatingId === row.id}
+                        onClick={() => startEdit(row)}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        Изменить
+                      </button>
+                      <button
+                        type="button"
+                        disabled={updatingId === row.id}
+                        onClick={() => void onSoftDeleteRow(row)}
+                        className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                      >
+                        Скрыть
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
@@ -590,10 +720,10 @@ export default function CrmAppointmentsPage() {
               <th className="px-4 py-3">Запись</th>
               <th className="px-4 py-3">Телефон</th>
               <th className="px-4 py-3">Услуга</th>
-              <th className="px-4 py-3">Дата/время</th>
-              <th className="px-4 py-3">Комментарий</th>
+              <th className="px-4 py-3">Время</th>
+              <th className="px-4 py-3">Комм.</th>
               <th className="px-4 py-3">Статус</th>
-              <th className="min-w-[11rem] px-4 py-3">Изменить статус</th>
+              <th className="min-w-[10rem] px-4 py-3">Смена</th>
               <th className="px-4 py-3">Правка</th>
               <th className="px-4 py-3">Скрыть</th>
             </tr>

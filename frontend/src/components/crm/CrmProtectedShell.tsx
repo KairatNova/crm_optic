@@ -114,10 +114,8 @@ export function CrmProtectedShell({
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <div className="mx-auto flex max-w-[1560px] gap-4 px-2 py-2 sm:px-3 sm:py-3">
           <aside className="sticky top-2 hidden h-[calc(100vh-1rem)] w-72 flex-col rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm lg:flex">
-            <div className="border-b border-slate-200 p-5">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">CRM Optic</div>
-              <div className="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Admin Panel</div>
-              <div className="mt-1 text-xs text-slate-500">Управление клиентами и записями</div>
+            <div className="border-b border-slate-200 p-4">
+              <div className="text-lg font-extrabold tracking-tight text-slate-900">CRM Optic</div>
             </div>
             <nav className="flex-1 space-y-1 p-3">
               {links.map((link) => {
@@ -142,7 +140,6 @@ export function CrmProtectedShell({
             </nav>
             <div className="border-t border-slate-200 p-4 text-xs text-slate-600">
               <div className="font-semibold text-slate-900">{displayName(session.user)}</div>
-              <div className="mt-1">Роль: {session.user.role}</div>
               <button
                 type="button"
                 onClick={session.logout}
@@ -154,31 +151,21 @@ export function CrmProtectedShell({
           </aside>
 
           <div className="min-h-screen flex-1">
-            <header className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6">
+            <header className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur sm:px-6 lg:hidden">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">CRM Workspace</div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {displayName(session.user)} ({session.user.role})
-                  </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-slate-900">{displayName(session.user)}</div>
+                  <div className="text-xs capitalize text-slate-500">{session.user.role}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/${locale}/crm`}
-                    className="hidden rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex"
-                  >
-                    Главная CRM
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={session.logout}
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 lg:hidden"
-                  >
-                    Выйти
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={session.logout}
+                  className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Выйти
+                </button>
               </div>
-              <div className="mt-3 flex gap-2 overflow-x-auto lg:hidden">
+              <div className="mt-3 flex gap-2 overflow-x-auto">
                 {links.map((link) => {
                   const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
                   return (
